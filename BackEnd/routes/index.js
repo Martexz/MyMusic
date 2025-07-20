@@ -7,6 +7,7 @@ router.prefix('/api');
 router.get('/swipers', api.getSwipers);
 router.get('/songs', api.getSongs);
 router.get('/singers', api.getSingers);
+router.get('/singers/:id', api.getSingerById);
 router.get('/songlists', api.getSongLists);
 router.get('/listsongs', api.getListSongs);
 router.get('/collects', api.getCollects);

@@ -15,7 +15,7 @@ const dataHandler = (modelName, options = {}) => {
   return async (ctx) => {
     try {
       const { id } = ctx.params;
-      const { page = 1, pageSize = 10, keyword } = ctx.query;
+      const { page = 1, pageSize = 10, keyword, singerId } = ctx.query;
       
       // 构建查询条件
       const where = {};
@@ -24,12 +24,18 @@ const dataHandler = (modelName, options = {}) => {
         ...options
       };
 
+      // 添加singerId过滤条件
+      if (singerId) {
+        where.singer_id = singerId;
+      }
+
       if (keyword) {
         if (modelName === 'Song') {
           // 如果是歌曲查询，同时搜索歌曲名和歌手名
           queryOptions = {
             ...options,
             where: {
+              ...where, // 保留已有的where条件（如singerId）
               [Op.or]: [
                 { name: { [Op.like]: `%${keyword}%` } },
                 { '$singer.name$': { [Op.like]: `%${keyword}%` } }
@@ -43,10 +49,18 @@ const dataHandler = (modelName, options = {}) => {
               }
             ]
           };
+        } else if (modelName === 'SongList') {
+          // 如果是歌单查询，搜索歌单标题
+          queryOptions.where.title = { [Op.like]: `%${keyword}%` };
         } else {
           // 其他表的默认查询
           queryOptions.where.name = { [Op.like]: `%${keyword}%` };
         }
+      }
+      
+      // 如果是按歌手ID查询歌曲
+      if (singerId && modelName === 'Song') {
+        queryOptions.where.singer_id = singerId;
       }
 
       // 如果需要分页
@@ -82,6 +96,27 @@ const dataHandler = (modelName, options = {}) => {
   }
 };
 
+// 获取单个歌手详情
+const getSingerById = async (ctx) => {
+  try {
+    const { id } = ctx.params;
+    const singer = await models.Singer.findByPk(id);
+    
+    if (!singer) {
+      ctx.body = { code: -1, msg: '歌手不存在' };
+      return;
+    }
+    
+    ctx.body = {
+      code: 0,
+      data: singer
+    };
+  } catch (error) {
+    console.error('[获取歌手详情错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
 // 定义关联查询选项
 const includeOptions = {
   Song: {
@@ -106,6 +141,7 @@ module.exports = {
   getSwipers: dataHandler('Swiper'),
   getSongs: dataHandler('Song', includeOptions.Song),
   getSingers: dataHandler('Singer'),
+  getSingerById,
   getSongLists: dataHandler('SongList'),
   getListSongs: dataHandler('ListSong', includeOptions.ListSong),
   getCollects: dataHandler('Collect'),

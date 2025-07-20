@@ -1,6 +1,7 @@
 import { Song } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { PlayerManager } from '../managers/PlayerManager';
+import router from '@ohos.router';
 
 @Component
 export struct SongItem {
@@ -42,6 +43,9 @@ export struct SongItem {
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .alignSelf(ItemAlign.Start)
           .margin({ top: 4 })
+          .onClick(() => {
+            this.navigateToSinger();
+          })
       }
       .layoutWeight(1)
       .margin({ left: CommonConstants.MARGIN_MEDIUM })
@@ -73,5 +77,18 @@ export struct SongItem {
   private showMoreOptions() {
     // TODO: 显示更多操作选项（收藏、添加到歌单等）
     console.log('显示更多操作:', this.song.name);
+  }
+
+  private navigateToSinger() {
+    if (this.song.singer?.id) {
+      router.pushUrl({
+        url: 'pages/SingerDetailPage',
+        params: {
+          singerId: this.song.singer.id
+        }
+      }).catch((error: Error) => {
+        console.error('跳转歌手详情页失败:', error.message);
+      });
+    }
   }
 }

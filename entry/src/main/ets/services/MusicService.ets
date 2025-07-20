@@ -88,6 +88,16 @@ export class MusicService {
   }
   
   /**
+   * 获取歌手的所有歌曲
+   */
+  static async getSongsBySingerId(singerId: number): Promise<Song[]> {
+    const queryParams: Record<string, string> = {};
+    queryParams.singerId = singerId.toString();
+    const response = await HttpUtil.get<Song[]>('api/songs', queryParams);
+    return response.data || [];
+  }
+  
+  /**
    * 获取歌单中的歌曲
    */
   static async getListSongs(songListId: number): Promise<Song[]> {
