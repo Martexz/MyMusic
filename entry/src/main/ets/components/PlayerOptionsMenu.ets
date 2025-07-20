@@ -1,9 +1,36 @@
 import { Song } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { MusicService } from '../services/MusicService';
+import { UserManager } from '../managers/UserManager';
+import { UserResponse } from '../models/ApiInterfaces';
+import router from '@ohos.router';
+import promptAction from '@ohos.promptAction';
 
 @Component
 export struct PlayerOptionsMenu {
   @Prop currentSong?: Song;
+  @State isCollected: boolean = false;
+  @State currentUser: UserResponse | null = null;
+  
+  private userManager: UserManager = UserManager.getInstance();
+  
+  aboutToAppear() {
+    this.currentUser = this.userManager.getCurrentUser();
+    this.userManager.addListener(this.onUserChanged.bind(this));
+    this.checkCollectStatus();
+  }
+  
+  aboutToDisappear() {
+    this.userManager.removeListener(this.onUserChanged.bind(this));
+  }
+  
+  /**
+   * 用户状态变化回调
+   */
+  private onUserChanged(user: UserResponse | null): void {
+    this.currentUser = user;
+    this.checkCollectStatus();
+  }
   
   build() {
     Column() {
@@ -27,9 +54,9 @@ export struct PlayerOptionsMenu {
           Image($r('app.media.ic_public_favor'))
             .width(24)
             .height(24)
-            .fillColor(CommonConstants.TEXT_PRIMARY)
+            .fillColor(this.isCollected ? '#FF4444' : CommonConstants.TEXT_PRIMARY)
           
-          Text('收藏')
+          Text(this.isCollected ? '取消收藏' : '收藏')
             .fontSize(16)
             .fontColor(CommonConstants.TEXT_PRIMARY)
             .margin({ left: 16 })
@@ -170,11 +197,61 @@ export struct PlayerOptionsMenu {
   }
   
   /**
+   * 检查收藏状态
+   */
+  private async checkCollectStatus(): Promise<void> {
+    if (this.currentSong?.id && this.currentUser?.id) {
+      try {
+        this.isCollected = await MusicService.checkCollect(this.currentUser.id, this.currentSong.id);
+      } catch (error) {
+        console.error('检查收藏状态失败:', error);
+        this.isCollected = false;
+      }
+    } else {
+      this.isCollected = false;
+    }
+  }
+  
+  /**
    * 切换收藏状态
    */
-  private toggleFavorite(): void {
-    // TODO: 实现收藏功能
-    console.log('切换收藏状态:', this.currentSong?.name);
+  private async toggleFavorite(): Promise<void> {
+    if (!this.currentSong?.id) {
+      console.log('当前没有歌曲');
+      return;
+    }
+    
+    if (!this.currentUser?.id) {
+      promptAction.showToast({ message: '请先登录' });
+      router.pushUrl({ url: 'pages/LoginPage' });
+      return;
+    }
+    
+    try {
+      let success = false;
+      if (this.isCollected) {
+        // 取消收藏
+        success = await MusicService.removeCollect(this.currentUser.id, this.currentSong.id);
+        if (success) {
+          this.isCollected = false;
+          promptAction.showToast({ message: '取消收藏成功' });
+        }
+      } else {
+        // 添加收藏
+        success = await MusicService.addCollect(this.currentUser.id, this.currentSong.id);
+        if (success) {
+          this.isCollected = true;
+          promptAction.showToast({ message: '收藏成功' });
+        }
+      }
+      
+      if (!success) {
+        promptAction.showToast({ message: '操作失败，请稍后重试' });
+      }
+    } catch (error) {
+      console.error('收藏操作出错:', error);
+      promptAction.showToast({ message: '操作失败，请稍后重试' });
+    }
   }
   
   /**

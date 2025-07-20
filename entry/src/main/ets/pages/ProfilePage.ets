@@ -1,10 +1,46 @@
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { Consumer } from '../models/DataModels';
+import { UserResponse } from '../models/ApiInterfaces';
+import { UserManager } from '../managers/UserManager';
+import router from '@ohos.router';
 
 @Component
 export struct ProfilePage {
   @State userInfo: Consumer | null = null;
   @State isLogin: boolean = false;
+  
+  private userManager: UserManager = UserManager.getInstance();
+  private userStateListener = (user: UserResponse | null) => {
+    this.checkLoginStatus();
+  };
+
+  aboutToAppear() {
+    this.checkLoginStatus();
+    this.userManager.addListener(this.userStateListener);
+  }
+
+  aboutToDisappear() {
+    this.userManager.removeListener(this.userStateListener);
+  }
+
+  private checkLoginStatus() {
+    const currentUser = this.userManager.getCurrentUser();
+    if (currentUser) {
+      this.isLogin = true;
+      // 将UserResponse转换为Consumer类型
+      const consumerUser: Consumer = {
+        id: currentUser.id,
+        username: currentUser.username,
+        email: currentUser.email,
+        introduction: currentUser.introduction,
+        avator: currentUser.avator
+      };
+      this.userInfo = consumerUser;
+    } else {
+      this.isLogin = false;
+      this.userInfo = null;
+    }
+  }
 
   build() {
     Column() {
@@ -49,7 +85,7 @@ export struct ProfilePage {
         .borderRadius(CommonConstants.BORDER_RADIUS)
         .width(120)
         .onClick(() => {
-          this.showLoginDialog();
+          this.navigateToLogin();
         })
     }
     .width('100%')
@@ -63,7 +99,7 @@ export struct ProfilePage {
     Row() {
       // 头像
       Row() {
-        Image(this.userInfo?.avatar || $r('app.media.ic_user_portrait'))
+        Image(this.userInfo?.avator || $r('app.media.ic_user_portrait'))
           .width(60)
           .height(60)
           .borderRadius(30)
@@ -94,7 +130,8 @@ export struct ProfilePage {
       .alignItems(VerticalAlign.Center)
       .padding(CommonConstants.MARGIN_MEDIUM)
       .onClick(() => {
-        // 跳转到个人信息编辑页面
+        // 跳转到个人主页
+        this.navigateToUserProfile();
       })
     }
     .width('100%')
@@ -106,6 +143,7 @@ export struct ProfilePage {
       // 我的收藏
       this.MenuItem('我的收藏', $r('app.media.ic_public_favor_filled'), () => {
         // 跳转到收藏页面
+        this.navigateToMyFavorites();
       })
       
       Divider()
@@ -133,7 +171,7 @@ export struct ProfilePage {
       if (this.isLogin) {
         // 退出登录
         this.MenuItem('退出登录', $r('app.media.ic_public_back'), () => {
-          this.logout();
+          this.handleLogout();
         })
         
         Divider()
@@ -180,19 +218,31 @@ export struct ProfilePage {
     .onClick(onClick)
   }
 
-  private showLoginDialog() {
-    // 显示登录对话框
-    this.isLogin = true;
-    this.userInfo = {
-      id: 1,
-      username: '测试用户',
-      avatar: undefined,
-      introduction: '音乐爱好者'
-    };
+  private navigateToLogin() {
+    router.pushUrl({
+      url: 'pages/LoginPage'
+    }).catch((error: Error) => {
+      console.error('跳转到登录页面失败:', error);
+    });
   }
 
-  private logout() {
-    this.isLogin = false;
-    this.userInfo = null;
+  private navigateToUserProfile() {
+    router.pushUrl({
+      url: 'pages/UserProfilePage'
+    }).catch((error: Error) => {
+      console.error('跳转到个人主页失败:', error);
+    });
+  }
+
+  private navigateToMyFavorites() {
+    router.pushUrl({
+      url: 'pages/MyFavoritesPage'
+    }).catch((error: Error) => {
+      console.error('跳转到我的收藏失败:', error);
+    });
+  }
+
+  private handleLogout() {
+    this.userManager.logout();
   }
 }

@@ -71,4 +71,33 @@ export class HttpUtil {
       });
     });
   }
+  
+  /**
+   * 通用DELETE请求
+   */
+  static async delete<T>(url: string, data?: Record<string, Object>): Promise<ApiResponse<T>> {
+    return new Promise((resolve, reject) => {
+      const httpRequest = http.createHttp();
+      
+      httpRequest.request(CommonConstants.BASE_URL + url, {
+        method: http.RequestMethod.DELETE,
+        header: {
+          'Content-Type': 'application/json'
+        },
+        extraData: data ? JSON.stringify(data) : undefined
+      }, (err, response) => {
+        if (!err) {
+          try {
+            const result = JSON.parse(response.result.toString()) as ApiResponse<T>;
+            resolve(result);
+          } catch (parseError) {
+            reject(parseError);
+          }
+        } else {
+          reject(err);
+        }
+        httpRequest.destroy();
+      });
+    });
+  }
 }

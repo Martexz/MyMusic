@@ -65,19 +65,21 @@ export interface Comment {
 }
 
 /**
- * 用户数据模型
+ * 消费者（用户）模型
  */
 export interface Consumer {
   id: number;
   username: string;
-  password?: string;
-  sex?: number;
-  phoneNum?: string;
+  password?: string; // 前端通常不存储密码
   email?: string;
+  gender?: number;
+  phone_num?: string;
   birth?: string;
   introduction?: string;
   location?: string;
-  avatar?: string;
+  avator?: string;
+  create_time?: string;
+  update_time?: string;
 }
 
 /**

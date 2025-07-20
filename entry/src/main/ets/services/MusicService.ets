@@ -1,6 +1,6 @@
 import { HttpUtil } from '../utils/HttpUtil';
 import { Song, Singer, SongList, Swiper, Comment, Consumer, ApiResponse } from '../models/DataModels';
-import { SearchParams, CommentParams, SongResponse, SingerResponse, SongListResponse, CommentResponse, ListSongItem } from '../models/ApiInterfaces';
+import { SearchParams, CommentParams, SongResponse, SingerResponse, SongListResponse, CommentResponse, ListSongItem, CollectRequest, CollectStatusResponse } from '../models/ApiInterfaces';
 
 /**
  * 音乐API服务类
@@ -160,5 +160,112 @@ export class MusicService {
    */
   static async searchSongLists(keyword: string, page: number = 1): Promise<SongListResponse> {
     return MusicService.getSongLists({ keyword, page, pageSize: 20 });
+  }
+  
+  /**
+   * 添加收藏
+   */
+  static async addCollect(consumerId: number, songId?: number, songListId?: number): Promise<boolean> {
+    try {
+      const requestData: Record<string, Object> = {
+        'consumer_id': consumerId as Object
+      };
+      if (songId !== undefined) {
+        requestData['song_id'] = songId as Object;
+      }
+      if (songListId !== undefined) {
+        requestData['song_list_id'] = songListId as Object;
+      }
+      
+      const response = await HttpUtil.post<Object>('api/collects', requestData);
+      return response.code === 0;
+    } catch (error) {
+      console.error('添加收藏失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取用户收藏的歌曲列表
+   */
+  static async getCollectSongs(consumerId: number): Promise<Song[]> {
+    try {
+      const queryParams: Record<string, string> = {};
+      queryParams.consumer_id = consumerId.toString();
+      queryParams.type = 'song';
+      
+      const response = await HttpUtil.get<Song[]>('api/collects', queryParams);
+      return response.data || [];
+    } catch (error) {
+      console.error('获取收藏歌曲失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 取消收藏 (别名方法，与removeCollect保持一致)
+   */
+  static async removeFromCollect(consumerId: number, songId?: number, songListId?: number): Promise<boolean> {
+    return MusicService.removeCollect(consumerId, songId, songListId);
+  }
+  
+  /**
+   * 取消收藏
+   */
+  static async removeCollect(consumerId: number, songId?: number, songListId?: number): Promise<boolean> {
+    try {
+      const requestData: Record<string, Object> = {
+        'consumer_id': consumerId as Object
+      };
+      if (songId !== undefined) {
+        requestData['song_id'] = songId as Object;
+      }
+      if (songListId !== undefined) {
+        requestData['song_list_id'] = songListId as Object;
+      }
+      
+      const response = await HttpUtil.delete<Object>('api/collects', requestData);
+      return response.code === 0;
+    } catch (error) {
+      console.error('取消收藏失败:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * 检查收藏状态
+   */
+  static async checkCollect(consumerId: number, songId?: number, songListId?: number): Promise<boolean> {
+    try {
+      const queryParams: Record<string, string> = {};
+      queryParams.consumer_id = consumerId.toString();
+      if (songId !== undefined) {
+        queryParams.song_id = songId.toString();
+      }
+      if (songListId !== undefined) {
+        queryParams.song_list_id = songListId.toString();
+      }
+      
+      const response = await HttpUtil.get<CollectStatusResponse>('api/collects/check', queryParams);
+      return response.data?.isCollected || false;
+    } catch (error) {
+      console.error('检查收藏状态失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 播放音乐
+   */
+  static async playMusic(song: Song, playlist: Song[], currentIndex: number): Promise<boolean> {
+    try {
+      // 这里应该调用音乐播放器服务
+      // 暂时只是记录日志
+      console.log(`正在播放: ${song.name}, 播放列表长度: ${playlist.length}, 当前索引: ${currentIndex}`);
+      return true;
+    } catch (error) {
+      console.error('播放音乐失败:', error);
+      return false;
+    }
   }
 }

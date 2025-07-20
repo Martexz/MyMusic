@@ -2,6 +2,9 @@
   "src": [
     "pages/Index",
     "pages/PlayerPage",
-    "pages/SingerDetailPage"
+    "pages/SingerDetailPage",
+    "pages/LoginPage",
+    "pages/UserProfilePage",
+    "pages/MyFavoritesPage"
   ]
 }

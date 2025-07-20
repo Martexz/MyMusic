@@ -135,6 +135,9 @@ struct PlayerPage {
               .fontColor('#CCFFFFFF')
               .textAlign(TextAlign.Center)
               .margin({ top: 8 })
+              .onClick(() => {
+                this.navigateToSinger();
+              })
           }
           .width('100%')
           .padding({ left: 32, right: 32 })
@@ -269,6 +272,23 @@ struct PlayerPage {
         return $r('app.media.ic_public_random');
       default:
         return $r('app.media.ic_public_order_play');
+    }
+  }
+  
+  /**
+   * 跳转到歌手详情页
+   */
+  private navigateToSinger(): void {
+    const currentSong = this.getCurrentSong();
+    if (currentSong?.singer?.id) {
+      router.pushUrl({
+        url: 'pages/SingerDetailPage',
+        params: {
+          singerId: currentSong.singer.id
+        }
+      }).catch((error: Error) => {
+        console.error('跳转歌手详情页失败:', error.message);
+      });
     }
   }
 }

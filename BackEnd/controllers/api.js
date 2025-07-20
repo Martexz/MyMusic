@@ -117,6 +117,208 @@ const getSingerById = async (ctx) => {
   }
 };
 
+// 添加收藏
+const addCollect = async (ctx) => {
+  try {
+    const { consumer_id, song_id, song_list_id } = ctx.request.body;
+    
+    if (!consumer_id || (!song_id && !song_list_id)) {
+      ctx.body = { code: -1, msg: '参数不完整' };
+      return;
+    }
+    
+    // 检查是否已经收藏
+    const existing = await models.Collect.findOne({
+      where: {
+        consumer_id,
+        ...(song_id ? { song_id } : { song_list_id })
+      }
+    });
+    
+    if (existing) {
+      ctx.body = { code: -1, msg: '已经收藏过了' };
+      return;
+    }
+    
+    const collect = await models.Collect.create({
+      consumer_id,
+      song_id,
+      song_list_id
+    });
+    
+    ctx.body = {
+      code: 0,
+      data: collect,
+      msg: '收藏成功'
+    };
+  } catch (error) {
+    console.error('[添加收藏错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
+// 取消收藏
+const removeCollect = async (ctx) => {
+  try {
+    const { consumer_id, song_id, song_list_id } = ctx.request.body;
+    
+    if (!consumer_id || (!song_id && !song_list_id)) {
+      ctx.body = { code: -1, msg: '参数不完整' };
+      return;
+    }
+    
+    const result = await models.Collect.destroy({
+      where: {
+        consumer_id,
+        ...(song_id ? { song_id } : { song_list_id })
+      }
+    });
+    
+    if (result === 0) {
+      ctx.body = { code: -1, msg: '收藏记录不存在' };
+      return;
+    }
+    
+    ctx.body = {
+      code: 0,
+      msg: '取消收藏成功'
+    };
+  } catch (error) {
+    console.error('[取消收藏错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
+// 检查收藏状态
+const checkCollect = async (ctx) => {
+  try {
+    const { consumer_id, song_id, song_list_id } = ctx.query;
+    
+    if (!consumer_id || (!song_id && !song_list_id)) {
+      ctx.body = { code: -1, msg: '参数不完整' };
+      return;
+    }
+    
+    const collect = await models.Collect.findOne({
+      where: {
+        consumer_id,
+        ...(song_id ? { song_id } : { song_list_id })
+      }
+    });
+    
+    ctx.body = {
+      code: 0,
+      data: {
+        isCollected: !!collect
+      }
+    };
+  } catch (error) {
+    console.error('[检查收藏状态错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
+// 用户登录
+const login = async (ctx) => {
+  try {
+    const { username, password } = ctx.request.body;
+    
+    if (!username || !password) {
+      ctx.body = { code: -1, msg: '用户名和密码不能为空' };
+      return;
+    }
+    
+    const consumer = await models.Consumer.findOne({
+      where: { username }
+    });
+    
+    if (!consumer) {
+      ctx.body = { code: -1, msg: '用户不存在' };
+      return;
+    }
+    
+    if (consumer.password !== password) {
+      ctx.body = { code: -1, msg: '密码错误' };
+      return;
+    }
+    
+    // 返回用户信息（不包含密码）
+    const userInfo = {
+      id: consumer.id,
+      username: consumer.username,
+      email: consumer.email,
+      gender: consumer.gender,
+      phone_num: consumer.phone_num,
+      birth: consumer.birth,
+      introduction: consumer.introduction,
+      location: consumer.location,
+      avator: consumer.avator
+    };
+    
+    ctx.body = {
+      code: 0,
+      data: userInfo,
+      msg: '登录成功'
+    };
+  } catch (error) {
+    console.error('[登录错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
+// 用户注册
+const register = async (ctx) => {
+  try {
+    const { username, password, email } = ctx.request.body;
+    
+    if (!username || !password) {
+      ctx.body = { code: -1, msg: '用户名和密码不能为空' };
+      return;
+    }
+    
+    // 检查用户名是否已存在
+    const existingUser = await models.Consumer.findOne({
+      where: { username }
+    });
+    
+    if (existingUser) {
+      ctx.body = { code: -1, msg: '用户名已存在' };
+      return;
+    }
+    
+    // 创建新用户
+    const newUser = await models.Consumer.create({
+      username,
+      password,
+      email,
+      created_at: new Date(),
+      updated_at: new Date()
+    });
+    
+    // 返回用户信息（不包含密码）
+    const userInfo = {
+      id: newUser.id,
+      username: newUser.username,
+      email: newUser.email,
+      gender: newUser.gender,
+      phone_num: newUser.phone_num,
+      birth: newUser.birth,
+      introduction: newUser.introduction,
+      location: newUser.location,
+      avator: newUser.avator
+    };
+    
+    ctx.body = {
+      code: 0,
+      data: userInfo,
+      msg: '注册成功'
+    };
+  } catch (error) {
+    console.error('[注册错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
 // 定义关联查询选项
 const includeOptions = {
   Song: {
@@ -145,6 +347,11 @@ module.exports = {
   getSongLists: dataHandler('SongList'),
   getListSongs: dataHandler('ListSong', includeOptions.ListSong),
   getCollects: dataHandler('Collect'),
+  addCollect,
+  removeCollect,
+  checkCollect,
+  login,
+  register,
   getComments: dataHandler('Comment', includeOptions.Comment),
   getRanks: dataHandler('Rank'),
   getConsumers: dataHandler('Consumer'),

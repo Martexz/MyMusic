@@ -57,3 +57,51 @@ export interface CommentResponse {
   comments: Comment[];
   total: number;
 }
+
+/**
+ * 收藏请求接口
+ */
+export interface CollectRequest {
+  consumer_id: number;
+  song_id?: number;
+  song_list_id?: number;
+}
+
+/**
+ * 收藏状态响应接口
+ */
+export interface CollectStatusResponse {
+  isCollected: boolean;
+}
+
+/**
+ * 登录请求接口
+ */
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+/**
+ * 注册请求接口
+ */
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  email?: string;
+}
+
+/**
+ * 用户响应接口
+ */
+export interface UserResponse {
+  id: number;
+  username: string;
+  email?: string;
+  gender?: number;
+  phone_num?: string;
+  birth?: string;
+  introduction?: string;
+  location?: string;
+  avator?: string;
+}
