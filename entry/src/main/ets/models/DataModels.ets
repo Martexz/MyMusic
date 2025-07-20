@@ -9,6 +9,10 @@ export interface Song {
   lyric?: string;
   singerId: number;
   singer?: Singer;
+  album?: string;
+  duration?: number;
+  size?: number;
+  releaseDate?: string;
   introduction?: string;
   createTime?: string;
   updateTime?: string;

@@ -1,6 +1,8 @@
 import { PlayerManager } from '../managers/PlayerManager';
 import { PlayerState, PlayMode } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { ImageUtil } from '../utils/ImageUtil';
+import router from '@ohos.router';
 
 @Component
 export struct MiniPlayer {
@@ -33,17 +35,19 @@ export struct MiniPlayer {
   }
 
   build() {
-    Row() {
-      if (this.playerState.currentSong) {
-        // 歌曲封面
-        Image(this.playerState.currentSong.pic || $r('app.media.ic_music_fill'))
-          .width(50)
-          .height(50)
-          .borderRadius(8)
-          .objectFit(ImageFit.Cover)
-          .onClick(() => {
-            this.openPlayerPage();
-          })
+    Column() {
+      Row() {
+        if (this.playerState.currentSong) {
+          // 歌曲封面
+          Image(ImageUtil.getSongCoverUrl(this.playerState.currentSong.pic || ''))
+            .width(50)
+            .height(50)
+            .borderRadius(8)
+            .objectFit(ImageFit.Cover)
+            .alt($r('app.media.ic_music_fill'))
+            .onClick(() => {
+              this.openPlayerPage();
+            })
 
         // 歌曲信息
         Column() {
@@ -138,15 +142,29 @@ export struct MiniPlayer {
           .fillColor(CommonConstants.TEXT_SECONDARY)
           .opacity(0.5)
       }
+      }
+      .width('100%')
+      .height(60)
+      .padding({ 
+        left: CommonConstants.MARGIN_MEDIUM, 
+        right: CommonConstants.MARGIN_MEDIUM,
+        top: CommonConstants.MARGIN_SMALL,
+        bottom: CommonConstants.MARGIN_SMALL
+      })
+      .backgroundColor(Color.White)
+      
+      // 进度条
+      if (this.playerState.currentSong && this.playerState.duration > 0) {
+        Progress({
+          value: this.playerState.currentTime,
+          total: this.playerState.duration
+        })
+          .width('100%')
+          .height(2)
+          .color(CommonConstants.PRIMARY_COLOR)
+          .backgroundColor('#F0F0F0')
+      }
     }
-    .width('100%')
-    .height(70)
-    .padding({ 
-      left: CommonConstants.MARGIN_MEDIUM, 
-      right: CommonConstants.MARGIN_MEDIUM,
-      top: CommonConstants.MARGIN_SMALL,
-      bottom: CommonConstants.MARGIN_SMALL
-    })
     .backgroundColor(Color.White)
     .border({
       width: { top: 1 },
@@ -155,8 +173,12 @@ export struct MiniPlayer {
   }
 
   private openPlayerPage() {
-    // TODO: 跳转到播放器页面
-    console.log('打开播放器页面');
+    // 跳转到播放器页面
+    router.pushUrl({
+      url: 'pages/PlayerPage'
+    }).catch((error: Error) => {
+      console.error('跳转播放器页面失败:', error.message);
+    });
   }
 
   private showPlaylist() {
