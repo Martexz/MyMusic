@@ -8,7 +8,6 @@ import router from '@ohos.router';
 export struct ProfilePage {
   @State userInfo: Consumer | null = null;
   @State isLogin: boolean = false;
-  
   private userManager: UserManager = UserManager.getInstance();
   private userStateListener = (user: UserResponse | null) => {
     this.checkLoginStatus();
@@ -103,7 +102,7 @@ export struct ProfilePage {
           .width(60)
           .height(60)
           .borderRadius(30)
-        
+
         Column() {
           Text(this.userInfo?.username || '用户名')
             .fontSize(18)
@@ -143,9 +142,9 @@ export struct ProfilePage {
       // 我的收藏
       this.MenuItem('我的收藏', $r('app.media.ic_public_favor_filled'), () => {
         // 跳转到收藏页面
-        this.navigateToMyFavorites();
+        // this.navigateToMyFavorites();
       })
-      
+
       Divider()
         .color('#F0F0F0')
         .margin({ left: CommonConstants.MARGIN_MEDIUM, right: CommonConstants.MARGIN_MEDIUM })
@@ -154,7 +153,7 @@ export struct ProfilePage {
       this.MenuItem('创建的歌单', $r('app.media.ic_public_folder'), () => {
         // 跳转到歌单页面
       })
-      
+
       Divider()
         .color('#F0F0F0')
         .margin({ left: CommonConstants.MARGIN_MEDIUM, right: CommonConstants.MARGIN_MEDIUM })
@@ -163,7 +162,7 @@ export struct ProfilePage {
       this.MenuItem('最近播放', $r('app.media.ic_public_play_last'), () => {
         // 跳转到历史页面
       })
-      
+
       Divider()
         .color('#F0F0F0')
         .margin({ left: CommonConstants.MARGIN_MEDIUM, right: CommonConstants.MARGIN_MEDIUM })
@@ -173,7 +172,7 @@ export struct ProfilePage {
         this.MenuItem('退出登录', $r('app.media.ic_public_back'), () => {
           this.handleLogout();
         })
-        
+
         Divider()
           .color('#F0F0F0')
           .margin({ left: CommonConstants.MARGIN_MEDIUM, right: CommonConstants.MARGIN_MEDIUM })
@@ -209,9 +208,9 @@ export struct ProfilePage {
     }
     .width('100%')
     .height(56)
-    .padding({ 
-      left: CommonConstants.MARGIN_MEDIUM, 
-      right: CommonConstants.MARGIN_MEDIUM 
+    .padding({
+      left: CommonConstants.MARGIN_MEDIUM,
+      right: CommonConstants.MARGIN_MEDIUM
     })
     .justifyContent(FlexAlign.SpaceBetween)
     .alignItems(VerticalAlign.Center)
@@ -231,14 +230,6 @@ export struct ProfilePage {
       url: 'pages/UserProfilePage'
     }).catch((error: Error) => {
       console.error('跳转到个人主页失败:', error);
-    });
-  }
-
-  private navigateToMyFavorites() {
-    router.pushUrl({
-      url: 'pages/MyFavoritesPage'
-    }).catch((error: Error) => {
-      console.error('跳转到我的收藏失败:', error);
     });
   }
 

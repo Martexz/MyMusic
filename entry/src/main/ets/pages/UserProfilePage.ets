@@ -1,7 +1,8 @@
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { Consumer } from '../models/DataModels';
-import { UserResponse } from '../models/ApiInterfaces';
+import { UserResponse, UpdateUserRequest } from '../models/ApiInterfaces';
 import { UserManager } from '../managers/UserManager';
+import { UserService } from '../services/UserService';
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 
@@ -10,10 +11,10 @@ import promptAction from '@ohos.promptAction';
 struct UserProfilePage {
   @State userInfo: Consumer | null = null;
   @State isEditing: boolean = false;
+  @State isSaving: boolean = false;
   @State tempUsername: string = '';
   @State tempIntroduction: string = '';
   @State tempEmail: string = '';
-  
   private userManager: UserManager = UserManager.getInstance();
 
   aboutToAppear() {
@@ -45,18 +46,15 @@ struct UserProfilePage {
     Column() {
       // 顶部导航栏
       this.TopNavigationBar()
-      
+
       // 用户头像区域
       this.UserAvatarSection()
-      
+
       // 用户信息区域
       this.UserInfoSection()
-      
+
       // 统计信息区域
       this.UserStatsSection()
-      
-      // 操作按钮区域
-      this.ActionButtonsSection()
     }
     .width('100%')
     .height('100%')
@@ -82,12 +80,19 @@ struct UserProfilePage {
         .textAlign(TextAlign.Center)
 
       if (this.isEditing) {
-        Text('保存')
-          .fontSize(16)
-          .fontColor(CommonConstants.PRIMARY_COLOR)
-          .onClick(() => {
-            this.saveUserInfo();
-          })
+        if (this.isSaving) {
+          LoadingProgress()
+            .width(16)
+            .height(16)
+            .color(CommonConstants.PRIMARY_COLOR)
+        } else {
+          Text('保存')
+            .fontSize(16)
+            .fontColor(CommonConstants.PRIMARY_COLOR)
+            .onClick(() => {
+              this.saveUserInfo();
+            })
+        }
       } else {
         Text('编辑')
           .fontSize(16)
@@ -169,9 +174,10 @@ struct UserProfilePage {
         .margin({ left: 16, right: 16 })
 
       // 个人简介
-      this.InfoItem('个人简介', this.userInfo?.introduction || '这个人很懒，什么都没留下', this.tempIntroduction, (value: string) => {
-        this.tempIntroduction = value;
-      }, '请输入个人简介')
+      this.InfoItem('个人简介', this.userInfo?.introduction || '这个人很懒，什么都没留下', this.tempIntroduction,
+        (value: string) => {
+          this.tempIntroduction = value;
+        }, '请输入个人简介')
     }
     .width('100%')
     .backgroundColor(Color.White)
@@ -215,19 +221,19 @@ struct UserProfilePage {
   UserStatsSection() {
     Row() {
       this.StatItem('收藏歌曲', '12')
-      
+
       Divider()
         .vertical(true)
         .height(40)
         .color('#F0F0F0')
-      
+
       this.StatItem('创建歌单', '3')
-      
+
       Divider()
         .vertical(true)
         .height(40)
         .color('#F0F0F0')
-      
+
       this.StatItem('播放时长', '24h')
     }
     .width('100%')
@@ -256,105 +262,54 @@ struct UserProfilePage {
     .alignItems(HorizontalAlign.Center)
   }
 
-  @Builder
-  ActionButtonsSection() {
-    Column() {
-      // 我的收藏
-      this.ActionButton('我的收藏', $r('app.media.ic_public_favor_filled'), () => {
-        // 跳转到收藏页面
-        this.navigateToMyFavorites();
-      })
-
-      Divider()
-        .color('#F0F0F0')
-        .margin({ left: 16, right: 16 })
-
-      // 创建的歌单
-      this.ActionButton('创建的歌单', $r('app.media.ic_public_folder'), () => {
-        // 跳转到歌单页面
-        promptAction.showToast({ message: '跳转到创建的歌单' });
-      })
-
-      Divider()
-        .color('#F0F0F0')
-        .margin({ left: 16, right: 16 })
-
-      // 最近播放
-      this.ActionButton('最近播放', $r('app.media.ic_public_play_last'), () => {
-        // 跳转到历史页面
-        promptAction.showToast({ message: '跳转到最近播放' });
-      })
-
-      Divider()
-        .color('#F0F0F0')
-        .margin({ left: 16, right: 16 })
-
-      // 设置
-      this.ActionButton('设置', $r('app.media.ic_public_settings'), () => {
-        // 跳转到设置页面
-        promptAction.showToast({ message: '跳转到设置' });
-      })
-    }
-    .width('100%')
-    .backgroundColor(Color.White)
-    .borderRadius(12)
-    .margin({ top: 16, left: 16, right: 16, bottom: 16 })
-  }
-
-  @Builder
-  ActionButton(title: string, icon: Resource, onClick: () => void) {
-    Row() {
-      Image(icon)
-        .width(24)
-        .height(24)
-        .fillColor(CommonConstants.TEXT_SECONDARY)
-
-      Text(title)
-        .fontSize(16)
-        .fontColor(CommonConstants.TEXT_PRIMARY)
-        .margin({ left: 12 })
-
-      Blank()
-
-      Text('>')
-        .fontSize(16)
-        .fontColor(CommonConstants.TEXT_SECONDARY)
-    }
-    .width('100%')
-    .height(56)
-    .padding({ left: 16, right: 16 })
-    .justifyContent(FlexAlign.SpaceBetween)
-    .alignItems(VerticalAlign.Center)
-    .onClick(onClick)
-  }
-
   private selectAvatar() {
     promptAction.showToast({ message: '选择头像功能待实现' });
   }
 
-  private saveUserInfo() {
+  private async saveUserInfo() {
     if (this.tempUsername.trim().length === 0) {
       promptAction.showToast({ message: '用户名不能为空' });
       return;
     }
 
-    // 这里应该调用API更新用户信息
-    // 暂时只在本地更新
-    if (this.userInfo) {
-      this.userInfo.username = this.tempUsername;
-      this.userInfo.email = this.tempEmail;
-      this.userInfo.introduction = this.tempIntroduction;
+    if (!this.userInfo) {
+      promptAction.showToast({ message: '用户信息错误' });
+      return;
     }
 
-    this.isEditing = false;
-    promptAction.showToast({ message: '保存成功' });
-  }
+    this.isSaving = true;
 
-  private navigateToMyFavorites() {
-    router.pushUrl({
-      url: 'pages/MyFavoritesPage'
-    }).catch((error: Error) => {
-      console.error('跳转到我的收藏失败:', error);
-    });
+    try {
+      // 构建更新请求数据
+      const updateRequest: UpdateUserRequest = {
+        id: this.userInfo.id,
+        username: this.tempUsername.trim(),
+        email: this.tempEmail.trim() || undefined,
+        introduction: this.tempIntroduction.trim() || undefined
+      };
+
+      // 调用API更新用户信息
+      const updatedUser = await UserService.updateUserInfo(updateRequest);
+      
+      if (updatedUser) {
+        // 更新本地用户信息
+        this.userInfo.username = updatedUser.username;
+        this.userInfo.email = updatedUser.email;
+        this.userInfo.introduction = updatedUser.introduction;
+
+        // 更新UserManager中的用户信息
+        this.userManager.setCurrentUser(updatedUser);
+
+        this.isEditing = false;
+        promptAction.showToast({ message: '保存成功' });
+      } else {
+          promptAction.showToast({ message: '保存失败，请稍后重试' });
+        }
+    } catch (error) {
+      console.error('保存用户信息失败:', error);
+      promptAction.showToast({ message: '保存失败，请检查网络连接' });
+    } finally {
+      this.isSaving = false;
+    }
   }
 }

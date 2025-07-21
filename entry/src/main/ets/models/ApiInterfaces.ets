@@ -92,6 +92,21 @@ export interface RegisterRequest {
 }
 
 /**
+ * 更新用户信息请求接口
+ */
+export interface UpdateUserRequest {
+  id: number;
+  username?: string;
+  email?: string;
+  introduction?: string;
+  avator?: string;
+  gender?: number;
+  phone_num?: string;
+  birth?: string;
+  location?: string;
+}
+
+/**
  * 用户响应接口
  */
 export interface UserResponse {

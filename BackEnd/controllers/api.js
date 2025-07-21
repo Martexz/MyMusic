@@ -319,6 +319,81 @@ const register = async (ctx) => {
   }
 };
 
+
+// 更新用户信息
+const updateUser = async (ctx) => {
+  try {
+    const { id } = ctx.params;
+    const { username, email, introduction, avator, gender, phone_num, birth, location } = ctx.request.body;
+    
+    if (!id) {
+      ctx.body = { code: -1, msg: '用户ID不能为空' };
+      return;
+    }
+    
+    // 查找用户
+    const user = await models.Consumer.findByPk(id);
+    if (!user) {
+      ctx.body = { code: -1, msg: '用户不存在' };
+      return;
+    }
+    
+    // 如果要更新用户名，检查是否已存在
+    if (username && username !== user.username) {
+      const existingUser = await models.Consumer.findOne({
+        where: { 
+          username,
+          id: { [Op.ne]: id } // 排除当前用户
+        }
+      });
+      
+      if (existingUser) {
+        ctx.body = { code: -1, msg: '用户名已存在' };
+        return;
+      }
+    }
+    
+    // 构建更新数据
+    const updateData = {
+      updated_at: new Date()
+    };
+    
+    if (username !== undefined) updateData.username = username;
+    if (email !== undefined) updateData.email = email;
+    if (introduction !== undefined) updateData.introduction = introduction;
+    if (avator !== undefined) updateData.avator = avator;
+    if (gender !== undefined) updateData.gender = gender;
+    if (phone_num !== undefined) updateData.phone_num = phone_num;
+    if (birth !== undefined) updateData.birth = birth;
+    if (location !== undefined) updateData.location = location;
+    
+    // 更新用户信息
+    await user.update(updateData);
+    
+    // 返回更新后的用户信息（不包含密码）
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      gender: user.gender,
+      phone_num: user.phone_num,
+      birth: user.birth,
+      introduction: user.introduction,
+      location: user.location,
+      avator: user.avator
+    };
+    
+    ctx.body = {
+      code: 0,
+      data: userInfo,
+      msg: '更新成功'
+    };
+  } catch (error) {
+    console.error('[更新用户信息错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
 // 定义关联查询选项
 const includeOptions = {
   Song: {
@@ -352,6 +427,7 @@ module.exports = {
   checkCollect,
   login,
   register,
+  updateUser,
   getComments: dataHandler('Comment', includeOptions.Comment),
   getRanks: dataHandler('Rank'),
   getConsumers: dataHandler('Consumer'),
