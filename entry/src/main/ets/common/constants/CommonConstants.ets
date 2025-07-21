@@ -4,7 +4,7 @@
 export class CommonConstants {
   // 服务器配置
   // 开发环境 - 本地服务器
-  static readonly BASE_URL: string = 'http://10.130.114.227:8000/';
+  static readonly BASE_URL: string = 'http://10.136.50.119:3000/';
   
   // 生产环境配置示例 (根据需要修改)
   // static readonly BASE_URL: string = 'http://your-server-domain.com/';
