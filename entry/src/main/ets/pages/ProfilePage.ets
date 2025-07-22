@@ -2,6 +2,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { Consumer } from '../models/DataModels';
 import { UserResponse } from '../models/ApiInterfaces';
 import { UserManager } from '../managers/UserManager';
+import { ImageUtil } from '../utils/ImageUtil';
 import router from '@ohos.router';
 import prompt from '@system.prompt';
 import preferences from '@ohos.data.preferences';
@@ -17,6 +18,7 @@ export struct ProfilePage {
   private context = getContext() as common.UIAbilityContext;
 
   private userStateListener = (user: UserResponse | null) => {
+    console.log('ProfilePage 收到用户状态变化:', user);
     this.checkLoginStatus();
   };
   private readonly onThemeChanged = (mode: ThemeMode): void => {
@@ -37,6 +39,7 @@ export struct ProfilePage {
 
   private checkLoginStatus() {
     const currentUser = this.userManager.getCurrentUser();
+    console.log('ProfilePage 检查登录状态:', currentUser);
     if (currentUser) {
       this.isLogin = true;
       // 将UserResponse转换为Consumer类型
@@ -47,6 +50,7 @@ export struct ProfilePage {
         introduction: currentUser.introduction,
         avator: currentUser.avator
       };
+      console.log('ProfilePage 更新用户信息:', consumerUser);
       this.userInfo = consumerUser;
     } else {
       this.isLogin = false;
@@ -123,10 +127,22 @@ export struct ProfilePage {
     Row() {
       // 头像
       Row() {
-        Image(this.userInfo?.avator || $r('app.media.ic_user_portrait'))
-          .width(60)
-          .height(60)
-          .borderRadius(30)
+        if (this.userInfo?.avator) {
+          Image(ImageUtil.getUserAvatarUrl(this.userInfo.avator))
+            .width(60)
+            .height(60)
+            .borderRadius(30)
+            .objectFit(ImageFit.Cover)
+            .alt($r('app.media.ic_user_portrait'))
+            .onError(() => {
+              console.log('主页头像加载失败:', this.userInfo?.avator);
+            })
+        } else {
+          Image($r('app.media.ic_user_portrait'))
+            .width(60)
+            .height(60)
+            .borderRadius(30)
+        }
 
         Column() {
           Text(this.userInfo?.username || '用户名')

@@ -27,5 +27,6 @@ router.get('/songLists/created', api.getCreatedSongLists);
 router.get('/listSongs/playlist/:playlistId', api.getPlaylistSongs);
 router.post('/listSongs/add', api.addSongToPlaylist);
 router.delete('/listSongs/remove', api.removeSongFromPlaylist);
+router.post('/upload/avatar', api.uploadAvatar);
 
 module.exports = router;

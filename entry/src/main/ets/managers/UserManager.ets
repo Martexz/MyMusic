@@ -68,9 +68,9 @@ export class UserManager {
   /**
    * 设置当前用户
    */
-  setCurrentUser(user: UserResponse | null): void {
+  async setCurrentUser(user: UserResponse | null): Promise<void> {
     this.currentUser = user;
-    this.saveUserToStorage();
+    await this.saveUserToStorage();
     this.notifyListeners();
   }
   

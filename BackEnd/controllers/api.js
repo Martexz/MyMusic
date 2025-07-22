@@ -3,12 +3,54 @@ const { Op } = require('sequelize');
 const path = require('path');
 const Koa = require('koa');
 const serve = require('koa-static');
+const multer = require('@koa/multer');
+const fs = require('fs');
 
 const app = new Koa();
 
 // 配置静态文件服务
 const staticPath = path.join(__dirname, '../public');
 app.use(serve(staticPath));
+
+// 确保上传目录存在
+const uploadDir = path.join(__dirname, '../public/uploads/avatars');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// 配置multer用于头像上传
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      const filename = `avatar_${Date.now()}${ext}`;
+      cb(null, filename);
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB限制
+  },
+  fileFilter: (req, file, cb) => {
+    // 检查文件类型
+    console.log('收到文件上传:', {
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+    
+    if (file.mimetype.startsWith('image/')) {
+      console.log('文件类型验证通过:', file.mimetype);
+      cb(null, true);
+    } else {
+      console.log('文件类型验证失败:', file.mimetype);
+      cb(new Error('只允许上传图片文件'));
+    }
+  }
+});
 
 // 统一的数据处理方法
 const dataHandler = (modelName, options = {}) => {
@@ -252,7 +294,7 @@ const login = async (ctx) => {
       birth: consumer.birth,
       introduction: consumer.introduction,
       location: consumer.location,
-      avator: consumer.avator
+      avator: consumer.avatar  // 数据库字段是avatar，但前端期望avator
     };
     
     ctx.body = {
@@ -305,7 +347,7 @@ const register = async (ctx) => {
       birth: newUser.birth,
       introduction: newUser.introduction,
       location: newUser.location,
-      avator: newUser.avator
+      avator: newUser.avatar  // 数据库字段是avatar，但前端期望avator
     };
     
     ctx.body = {
@@ -361,7 +403,7 @@ const updateUser = async (ctx) => {
     if (username !== undefined) updateData.username = username;
     if (email !== undefined) updateData.email = email;
     if (introduction !== undefined) updateData.introduction = introduction;
-    if (avator !== undefined) updateData.avator = avator;
+    if (avator !== undefined) updateData.avatar = avator;  // 修正字段名：avator -> avatar
     if (gender !== undefined) updateData.gender = gender;
     if (phone_num !== undefined) updateData.phone_num = phone_num;
     if (birth !== undefined) updateData.birth = birth;
@@ -380,7 +422,7 @@ const updateUser = async (ctx) => {
       birth: user.birth,
       introduction: user.introduction,
       location: user.location,
-      avator: user.avator
+      avator: user.avatar  // 数据库字段是avatar，但前端期望avator
     };
     
     ctx.body = {
@@ -616,6 +658,98 @@ const getPlaylistSongs = async (ctx) => {
   }
 };
 
+// 上传用户头像
+const uploadAvatar = async (ctx) => {
+  return new Promise((resolve, reject) => {
+    avatarUpload.single('avatar')(ctx, async () => {
+      try {
+        console.log('开始处理头像上传...');
+        console.log('请求体:', ctx.request.body);
+        
+        const { userId } = ctx.request.body;
+        const file = ctx.request.file;
+
+        console.log('用户ID:', userId);
+        console.log('上传文件信息:', file ? {
+          fieldname: file.fieldname,
+          originalname: file.originalname,
+          filename: file.filename,
+          mimetype: file.mimetype,
+          size: file.size
+        } : '无文件');
+
+        if (!file) {
+          console.log('错误: 没有上传文件');
+          ctx.body = { code: -1, message: '没有上传文件' };
+          resolve();
+          return;
+        }
+
+        if (!userId) {
+          console.log('错误: 用户ID不能为空');
+          ctx.body = { code: -1, message: '用户ID不能为空' };
+          resolve();
+          return;
+        }
+
+        // 构建文件URL路径
+        const avatarPath = `/uploads/avatars/${file.filename}`;
+        console.log('头像路径:', avatarPath);
+
+        // 确保userId是数字类型
+        const userIdNumber = parseInt(userId);
+        console.log('用户ID (原始):', userId, '(转换后):', userIdNumber);
+
+        // 先检查用户是否存在
+        const existingUser = await models.Consumer.findByPk(userIdNumber);
+        console.log('用户存在检查:', existingUser ? '用户存在' : '用户不存在');
+
+        if (!existingUser) {
+          console.log('错误: 用户不存在');
+          ctx.body = { 
+            code: -1, 
+            message: '用户不存在' 
+          };
+          resolve();
+          return;
+        }
+
+        // 更新用户头像信息到数据库
+        const [updateCount] = await models.Consumer.update(
+          { avatar: avatarPath },  // 修正字段名：avator -> avatar
+          { where: { id: userIdNumber } }
+        );
+
+        console.log('数据库更新结果:', updateCount);
+
+        if (updateCount > 0) {
+          const responseData = { 
+            code: 0, 
+            data: avatarPath, 
+            message: '头像上传成功' 
+          };
+          console.log('成功响应:', responseData);
+          ctx.body = responseData;
+        } else {
+          const errorData = { 
+            code: -1, 
+            message: '更新用户头像失败' 
+          };
+          console.log('失败响应:', errorData);
+          ctx.body = errorData;
+        }
+        resolve();
+      } catch (error) {
+        console.error('[上传头像错误]:', error);
+        const errorResponse = { code: -1, message: error.message };
+        console.log('异常响应:', errorResponse);
+        ctx.body = errorResponse;
+        resolve();
+      }
+    });
+  });
+};
+
 
 module.exports = {
   getSwipers: dataHandler('Swiper'),
@@ -645,5 +779,6 @@ module.exports = {
   addSongToPlaylist,
   removeSongFromPlaylist,
   getPlaylistSongs,
+  uploadAvatar,
   app,
 };

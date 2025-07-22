@@ -68,4 +68,14 @@ export class ImageUtil {
     const baseUrl = 'http://10.130.3.83:8000';
     return ImageUtil.getImageUrl(pic, baseUrl);
   }
+
+  /**
+   * 获取用户头像URL
+   * @param pic 图片路径
+   * @returns 完整的图片URL
+   */
+  static getUserAvatarUrl(pic: string): string {
+    const baseUrl = 'http://10.130.3.83:8000';
+    return ImageUtil.getImageUrl(pic, baseUrl);
+  }
 }
