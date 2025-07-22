@@ -1,5 +1,6 @@
 import { Singer } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { ImageUtil } from '../utils/ImageUtil';
 
 @Component
 export struct SingerItem {
@@ -8,11 +9,15 @@ export struct SingerItem {
   build() {
     Row() {
       // 歌手头像
-      Image(this.singer.pic || $r('app.media.ic_user_portrait'))
-        .width(60)
-        .height(60)
-        .borderRadius(30)
-        .objectFit(ImageFit.Cover)
+      Image(this.singer.pic ? ImageUtil.getSingerAvatarUrl(this.singer.pic) : $r('app.media.ic_user_portrait'))
+      .width(50)
+      .height(50)
+      .borderRadius(25)
+      .objectFit(ImageFit.Cover)
+      .alt($r('app.media.ic_user_portrait'))
+      .onError(() => {
+        console.log('歌手头像加载失败:', this.singer.pic);
+      })
 
       // 歌手信息
       Column() {

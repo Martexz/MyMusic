@@ -120,3 +120,29 @@ export interface UserResponse {
   location?: string;
   avator?: string;
 }
+
+/**
+ * 歌单操作请求接口
+ */
+export interface PlaylistOperationRequest extends Record<string, Object> {
+  songListId: number;
+  songId: number;
+}
+
+/**
+ * 歌单歌曲响应接口
+ */
+export interface PlaylistSongsResponse {
+  success: boolean;
+  data?: Song[];
+  message?: string;
+}
+
+/**
+ * 基础API响应接口
+ */
+export interface BaseApiResponse {
+  code: number;
+  message?: string;
+  data?: Record<string, Object>;
+}

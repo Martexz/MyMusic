@@ -24,5 +24,8 @@ router.get('/consumers', api.getConsumers);
 router.get('/admins', api.getAdmins);
 router.post('/songLists/create', api.createSongList);
 router.get('/songLists/created', api.getCreatedSongLists);
+router.get('/listSongs/playlist/:playlistId', api.getPlaylistSongs);
+router.post('/listSongs/add', api.addSongToPlaylist);
+router.delete('/listSongs/remove', api.removeSongFromPlaylist);
 
 module.exports = router;

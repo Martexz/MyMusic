@@ -1,5 +1,6 @@
 import { SongList } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { ImageUtil } from '../utils/ImageUtil';
 
 @Component
 export struct SongListItem {
@@ -8,11 +9,15 @@ export struct SongListItem {
   build() {
     Column() {
       // 歌单封面
-      Image(this.songList.pic || $r('app.media.ic_public_music'))
+      Image(this.songList.pic ? ImageUtil.getSongListCoverUrl(this.songList.pic) : $r('app.media.ic_public_music'))
         .width('100%')
         .aspectRatio(1)
         .borderRadius(CommonConstants.BORDER_RADIUS)
         .objectFit(ImageFit.Cover)
+        .alt($r('app.media.ic_public_music'))
+        .onError(() => {
+          console.log('歌单图片加载失败:', this.songList.pic);
+        })
 
       // 歌单信息
       Column() {

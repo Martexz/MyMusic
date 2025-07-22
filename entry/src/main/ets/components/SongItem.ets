@@ -1,13 +1,23 @@
 import { Song } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { PlayerManager } from '../managers/PlayerManager';
+import { AddToPlaylistDialog } from './AddToPlaylistDialog';
 import router from '@ohos.router';
+import promptAction from '@ohos.promptAction';
+import { ImageUtil } from '../utils/ImageUtil';
 
 @Component
 export struct SongItem {
   @Prop song: Song;
   @Prop showIndex?: boolean = false;
   @Prop index?: number = 0;
+  @State showMoreMenu: boolean = false;
+
+  private addToPlaylistDialogController: CustomDialogController = new CustomDialogController({
+    builder: AddToPlaylistDialog(),
+    alignment: DialogAlignment.Bottom,
+    customStyle: true
+  });
 
   build() {
     Row() {
@@ -19,11 +29,15 @@ export struct SongItem {
           .fontColor(CommonConstants.TEXT_SECONDARY)
           .textAlign(TextAlign.Center)
       } else {
-        Image(this.song.pic || $r('app.media.ic_music_fill'))
+        Image(this.song.pic ? ImageUtil.getSongCoverUrl(this.song.pic) : $r('app.media.ic_music_fill'))
           .width(50)
           .height(50)
           .borderRadius(8)
           .objectFit(ImageFit.Cover)
+          .alt($r('app.media.ic_music_fill'))
+          .onError(() => {
+            console.log('歌曲图片加载失败:', this.song.pic);
+          })
       }
 
       // 歌曲信息
@@ -67,6 +81,72 @@ export struct SongItem {
     .onClick(() => {
       this.playSong();
     })
+    .bindSheet(this.showMoreMenu, this.MoreOptionsBuilder(), {
+      height: 200,
+      backgroundColor: Color.Transparent,
+      onDisappear: () => {
+        this.showMoreMenu = false;
+      }
+    })
+  }
+
+  @Builder
+  MoreOptionsBuilder() {
+    Column() {
+      Text('更多操作')
+        .fontSize(16)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(CommonConstants.TEXT_PRIMARY)
+        .margin({ bottom: 16 })
+
+      // 添加到歌单
+      Row() {
+        Image($r('app.media.ic_add_icon'))
+          .width(20)
+          .height(20)
+          .fillColor(CommonConstants.TEXT_PRIMARY)
+
+        Text('添加到歌单')
+          .fontSize(16)
+          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .margin({ left: 12 })
+      }
+      .width('100%')
+      .height(48)
+      .padding({ left: 16, right: 16 })
+      .justifyContent(FlexAlign.Start)
+      .alignItems(VerticalAlign.Center)
+      .onClick(() => {
+        this.showMoreMenu = false;
+        this.showAddToPlaylistDialog();
+      })
+
+      // 收藏歌曲
+      Row() {
+        Image($r('app.media.ic_public_favor'))
+          .width(20)
+          .height(20)
+          .fillColor(CommonConstants.TEXT_PRIMARY)
+
+        Text('收藏歌曲')
+          .fontSize(16)
+          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .margin({ left: 12 })
+      }
+      .width('100%')
+      .height(48)
+      .padding({ left: 16, right: 16 })
+      .justifyContent(FlexAlign.Start)
+      .alignItems(VerticalAlign.Center)
+      .onClick(() => {
+        this.showMoreMenu = false;
+        this.collectSong();
+      })
+    }
+    .width('100%')
+    .padding(16)
+    .backgroundColor(Color.White)
+    .borderRadius({ topLeft: 16, topRight: 16 })
   }
 
   private playSong() {
@@ -75,8 +155,26 @@ export struct SongItem {
   }
 
   private showMoreOptions() {
-    // TODO: 显示更多操作选项（收藏、添加到歌单等）
-    console.log('显示更多操作:', this.song.name);
+    this.showMoreMenu = true;
+  }
+
+  private showAddToPlaylistDialog() {
+    // 创建新的对话框实例
+    this.addToPlaylistDialogController = new CustomDialogController({
+      builder: AddToPlaylistDialog({
+        songId: this.song.id,
+        songName: this.song.name
+      }),
+      alignment: DialogAlignment.Bottom,
+      customStyle: true
+    });
+    
+    this.addToPlaylistDialogController.open();
+  }
+
+  private collectSong() {
+    // TODO: 实现收藏歌曲功能
+    promptAction.showToast({ message: '收藏功能待实现' });
   }
 
   private navigateToSinger() {

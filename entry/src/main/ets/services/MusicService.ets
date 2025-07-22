@@ -1,6 +1,6 @@
 import { HttpUtil } from '../utils/HttpUtil';
 import { Song, Singer, SongList, Swiper, Comment, Consumer, ApiResponse } from '../models/DataModels';
-import { SearchParams, CommentParams, SongResponse, SingerResponse, SongListResponse, CommentResponse, ListSongItem, CollectRequest, CollectStatusResponse } from '../models/ApiInterfaces';
+import { SearchParams, CommentParams, SongResponse, SingerResponse, SongListResponse, CommentResponse, ListSongItem, CollectRequest, CollectStatusResponse, PlaylistOperationRequest, PlaylistSongsResponse, BaseApiResponse } from '../models/ApiInterfaces';
 
 /**
  * 音乐API服务类
@@ -266,6 +266,76 @@ export class MusicService {
     } catch (error) {
       console.error('播放音乐失败:', error);
       return false;
+    }
+  }
+
+  /**
+   * 添加歌曲到歌单
+   */
+  static async addSongToPlaylist(songListId: number, songId: number): Promise<boolean> {
+    try {
+      const requestData: PlaylistOperationRequest = {
+        songListId: songListId,
+        songId: songId
+      };
+      const response = await HttpUtil.post<BaseApiResponse>('api/listSongs/add', requestData);
+      return response.code === 0;
+    } catch (error) {
+      console.error('添加歌曲到歌单失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 从歌单中移除歌曲
+   */
+  static async removeSongFromPlaylist(songListId: number, songId: number): Promise<boolean> {
+    try {
+      const requestData: PlaylistOperationRequest = {
+        songListId: songListId,
+        songId: songId
+      };
+      const response = await HttpUtil.delete<BaseApiResponse>('api/listSongs/remove', requestData);
+      return response.code === 0;
+    } catch (error) {
+      console.error('从歌单移除歌曲失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取用户创建的歌单列表
+   */
+  static async getUserCreatedPlaylists(userId: number): Promise<SongList[]> {
+    try {
+      const queryParams: Record<string, string> = {};
+      queryParams.userId = userId.toString();
+      
+      const response = await HttpUtil.get<SongList[]>('api/songLists/created', queryParams);
+      return response.data || [];
+    } catch (error) {
+      console.error('获取用户歌单失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 获取歌单中的歌曲 (新的API)
+   */
+  static async getPlaylistSongs(playlistId: number): Promise<PlaylistSongsResponse> {
+    try {
+      const response = await HttpUtil.get<Song[]>(`api/listSongs/playlist/${playlistId}`);
+      if (response.data) {
+        const result: PlaylistSongsResponse = { success: true, data: response.data };
+        return result;
+      } else {
+        const result: PlaylistSongsResponse = { success: false, message: '获取歌单歌曲失败' };
+        return result;
+      }
+    } catch (error) {
+      console.error('获取歌单歌曲失败:', error);
+      const result: PlaylistSongsResponse = { success: false, message: '网络请求失败' };
+      return result;
     }
   }
 }

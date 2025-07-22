@@ -293,4 +293,15 @@ export class PlayerManager {
     // TODO: 实现音量设置
     console.log('设置音量:', volume);
   }
+
+  /**
+   * 播放歌单
+   */
+  static playPlaylist(songs: Song[], startIndex: number = 0): void {
+    const instance = PlayerManager.getInstance();
+    instance.setPlaylist(songs, startIndex);
+    if (songs.length > 0 && startIndex < songs.length) {
+      instance.playSong(songs[startIndex], songs);
+    }
+  }
 }

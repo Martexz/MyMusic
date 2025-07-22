@@ -1,21 +1,80 @@
-import router from '@ohos.router';
-import {SongListParams} from '../models/DataModels'
+import { router } from '@kit.ArkUI';
+import { SongListParams, Song } from '../models/DataModels';
+import { MusicService } from '../services/MusicService';
+import { SongItem } from '../components/SongItem';
+import promptAction from '@ohos.promptAction';
+import { CommonConstants } from '../common/constants/CommonConstants';
+import { UserManager } from '../managers/UserManager';
+import { PlayerManager } from '../managers/PlayerManager';
 
+interface PlaylistInfo {
+  id: number;
+  name: string;
+  cover_image?: string;
+  description?: string;
+  song_count?: number;
+}
 
 @Entry
 @Component
 export struct MySongList {
-  @State songListId: number = -1
-  @State songListName: string = ''
-  @State creatorName: string = ''
-
+  @State songListId: number = -1;
+  @State songListName: string = '';
+  @State creatorName: string = '';
+  @State songs: Song[] = [];
+  @State isLoading: boolean = true;
 
   aboutToAppear() {
-    const params = router.getParams() as SongListParams
+    const params = router.getParams() as SongListParams;
     if (params) {
-      this.songListId = params.id ?? -1
-      this.songListName = params.title ?? ''
-      this.creatorName = params.username ?? ''
+      this.songListId = params.id ?? -1;
+      this.songListName = params.title ?? '';
+      this.creatorName = params.username ?? '';
+      
+      if (this.songListId !== -1) {
+        this.loadSongListSongs();
+      }
+    }
+  }
+
+  private async loadSongListSongs() {
+    try {
+      this.isLoading = true;
+      const result = await MusicService.getPlaylistSongs(this.songListId);
+      if (result.success && result.data) {
+        this.songs = result.data;
+      } else {
+        console.error('加载歌单歌曲失败:', result.message);
+        this.songs = [];
+        promptAction.showToast({ message: result.message || '加载歌单歌曲失败' });
+      }
+    } catch (error) {
+      console.error('加载歌单歌曲失败:', error);
+      this.songs = [];
+      promptAction.showToast({ message: '加载歌单歌曲失败' });
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private async playAllSongs() {
+    if (this.songs.length > 0) {
+      try {
+        PlayerManager.playPlaylist(this.songs, 0);
+        promptAction.showToast({ message: '开始播放歌单' });
+      } catch (error) {
+        console.error('播放失败:', error);
+        promptAction.showToast({ message: '播放失败' });
+      }
+    }
+  }
+
+  private playSong(song: Song, index: number) {
+    try {
+      PlayerManager.playPlaylist(this.songs, index);
+    } catch (error) {
+      console.error('播放失败:', error);
+      promptAction.showToast({ message: '播放失败' });
     }
   }
 
@@ -130,10 +189,13 @@ export struct MySongList {
               Image($r("app.media.ic_public_play_norm"))
                 .width(16)
                 .fillColor('#ff5186')
-              Text('播放全部 (0)')
+              Text(`播放全部 (${this.songs.length})`)
                 .fontColor('#333333')
                 .fontSize(14)
             }
+            .onClick(() => {
+              this.playAllSongs();
+            })
           }
           .width('100%')
           .padding(16)
@@ -142,27 +204,66 @@ export struct MySongList {
             color: '#12ec5c87'
           })
 
-          // 歌曲列表（示例空结构）
-          Column() {
-            List({ space: 15 }) {
-              // 歌曲列表项可以用 SongItem 占位，具体逻辑后续补充
-              ListItem() {
-                Row() {
-                  Text('到底了——')
-                    .fontColor(Color.Gray)
+          // 歌曲列表
+          if (this.isLoading) {
+            Column() {
+              LoadingProgress()
+                .width(40)
+                .height(40)
+                .color(CommonConstants.PRIMARY_COLOR)
+              
+              Text('加载中...')
+                .fontSize(14)
+                .fontColor(CommonConstants.TEXT_SECONDARY)
+                .margin({ top: 16 })
+            }
+            .width('100%')
+            .layoutWeight(1)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(HorizontalAlign.Center)
+          } else if (this.songs.length === 0) {
+            Column() {
+              Image($r('app.media.ic_public_music'))
+                .width(60)
+                .height(60)
+                .fillColor(CommonConstants.TEXT_SECONDARY)
+              
+              Text('歌单中暂无歌曲')
+                .fontSize(16)
+                .fontColor(CommonConstants.TEXT_PRIMARY)
+                .margin({ top: 16 })
+              
+              Text('快去添加一些喜欢的歌曲吧')
+                .fontSize(14)
+                .fontColor(CommonConstants.TEXT_SECONDARY)
+                .margin({ top: 8 })
+            }
+            .width('100%')
+            .layoutWeight(1)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(HorizontalAlign.Center)
+          } else {
+            List({ space: 8 }) {
+              ForEach(this.songs, (song: Song, index: number) => {
+                ListItem() {
+                  SongItem({ 
+                    song: song,
+                    showIndex: true,
+                    index: index + 1
+                  })
                 }
-                .width('100%')
-                .justifyContent(FlexAlign.Center)
-                .padding(16)
-              }
+                .onClick(() => {
+                  this.playSong(song, index);
+                })
+              })
             }
             .layoutWeight(1)
+            .padding({ left: 16, right: 16, bottom: 16 })
           }
-          .layoutWeight(1)
         }
         .layoutWeight(1)
         .width('100%')
-        .backgroundColor('#cccccc')
+        .backgroundColor('#FFFFFF')
         .borderRadius({ topLeft: 12, topRight: 12 })
       }
       .layoutWeight(1)

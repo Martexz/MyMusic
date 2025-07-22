@@ -35,7 +35,7 @@ export class ImageUtil {
    */
   static getSwiperImageUrl(pic: string): string {
     // 从CommonConstants导入BASE_URL
-    const baseUrl = 'http://10.130.114.227:8000';
+    const baseUrl = 'http://10.130.3.83:8000';
     return ImageUtil.getImageUrl(pic, baseUrl);
   }
   
@@ -45,7 +45,7 @@ export class ImageUtil {
    * @returns 完整的图片URL
    */
   static getSongCoverUrl(pic: string): string {
-    const baseUrl = 'http://10.130.114.227:8000';
+    const baseUrl = 'http://10.130.3.83:8000';
     return ImageUtil.getImageUrl(pic, baseUrl);
   }
   
@@ -55,7 +55,17 @@ export class ImageUtil {
    * @returns 完整的图片URL
    */
   static getSingerAvatarUrl(pic: string): string {
-    const baseUrl = 'http://10.130.114.227:8000';
+    const baseUrl = 'http://10.130.3.83:8000';
+    return ImageUtil.getImageUrl(pic, baseUrl);
+  }
+
+  /**
+   * 获取歌单封面URL
+   * @param pic 图片路径
+   * @returns 完整的图片URL
+   */
+  static getSongListCoverUrl(pic: string): string {
+    const baseUrl = 'http://10.130.3.83:8000';
     return ImageUtil.getImageUrl(pic, baseUrl);
   }
 }

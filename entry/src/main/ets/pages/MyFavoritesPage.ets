@@ -4,6 +4,7 @@ import { UserManager } from '../managers/UserManager';
 import { MusicService } from '../services/MusicService';
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
+import { ImageUtil } from '../utils/ImageUtil';
 
 @Entry
 @Component
@@ -269,11 +270,15 @@ struct MyFavoritesPage {
         .textAlign(TextAlign.Center)
 
       // 歌曲封面
-      Image(song.pic || $r('app.media.ic_music_fill'))
+      Image(song.pic ? ImageUtil.getSongCoverUrl(song.pic) : $r('app.media.ic_music_fill'))
         .width(40)
         .height(40)
         .borderRadius(4)
         .margin({ left: 8, right: 12 })
+        .alt($r('app.media.ic_music_fill'))
+        .onError(() => {
+          console.log('歌曲图片加载失败:', song.pic);
+        })
 
       // 歌曲信息
       Column() {

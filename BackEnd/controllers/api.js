@@ -505,6 +505,117 @@ const getUserIdByUsername = async (ctx) => {
   }
 };
 
+// 添加歌曲到歌单
+const addSongToPlaylist = async (ctx) => {
+  try {
+    const { songListId, songId } = ctx.request.body;
+    
+    if (!songListId || !songId) {
+      ctx.body = { code: -1, msg: '歌单ID和歌曲ID不能为空' };
+      return;
+    }
+
+    // 检查歌曲是否已在歌单中
+    const existing = await models.ListSong.findOne({
+      where: {
+        song_list_id: songListId,
+        song_id: songId
+      }
+    });
+
+    if (existing) {
+      ctx.body = { code: -1, msg: '歌曲已在歌单中' };
+      return;
+    }
+
+    // 添加歌曲到歌单
+    const listSong = await models.ListSong.create({
+      song_list_id: songListId,
+      song_id: songId
+    });
+
+    ctx.body = { code: 0, data: listSong, msg: '添加成功' };
+  } catch (error) {
+    console.error('[添加歌曲到歌单错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
+// 从歌单中移除歌曲
+const removeSongFromPlaylist = async (ctx) => {
+  try {
+    const { songListId, songId } = ctx.request.body;
+    
+    if (!songListId || !songId) {
+      ctx.body = { code: -1, msg: '歌单ID和歌曲ID不能为空' };
+      return;
+    }
+
+    // 删除歌单中的歌曲
+    const result = await models.ListSong.destroy({
+      where: {
+        song_list_id: songListId,
+        song_id: songId
+      }
+    });
+
+    if (result > 0) {
+      ctx.body = { code: 0, msg: '移除成功' };
+    } else {
+      ctx.body = { code: -1, msg: '歌曲不在歌单中' };
+    }
+  } catch (error) {
+    console.error('[从歌单移除歌曲错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
+// 获取歌单中的歌曲
+const getPlaylistSongs = async (ctx) => {
+  try {
+    const { playlistId } = ctx.params;
+    
+    if (!playlistId) {
+      ctx.body = { code: -1, msg: '歌单ID不能为空' };
+      return;
+    }
+
+    // 获取歌单中的歌曲，包含歌曲详细信息和歌手信息
+    const listSongs = await models.ListSong.findAll({
+      where: {
+        song_list_id: playlistId
+      },
+      include: [
+        {
+          model: models.Song,
+          as: 'song',
+          include: [
+            {
+              model: models.Singer,
+              as: 'singer',
+              attributes: ['id', 'name', 'pic']
+            }
+          ]
+        }
+      ],
+      order: [['id', 'ASC']] // 按添加顺序排序
+    });
+
+    // 提取歌曲数据
+    const songs = listSongs.map(item => item.song);
+    
+    ctx.body = { 
+      code: 0, 
+      data: songs, 
+      total: songs.length,
+      msg: '获取成功' 
+    };
+  } catch (error) {
+    console.error('[获取歌单歌曲错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
 
 module.exports = {
   getSwipers: dataHandler('Swiper'),
@@ -531,5 +642,8 @@ module.exports = {
   createSongList,
   getCreatedSongLists,
   getUserIdByUsername,
+  addSongToPlaylist,
+  removeSongFromPlaylist,
+  getPlaylistSongs,
   app,
 };
