@@ -6,6 +6,7 @@
     "pages/LoginPage",
     "pages/UserProfilePage",
     "pages/MyFavoritesPage",
+    "pages/MySongList",
     "pages/SettingsPage",
     "pages/ThemeModePage"
   ]

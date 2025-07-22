@@ -414,12 +414,108 @@ const includeOptions = {
   }
 };
 
+
+
+// 新增歌单
+const createSongList = async (ctx) => {
+  try {
+    const { title, introduction = '', user_id } = ctx.request.body;
+
+    if (!title || !user_id) {
+      ctx.body = { code: -1, msg: '缺少必要参数 title 或 user_id' };
+      return;
+    }
+
+    // 手动设置 id = 当前数量 + 1
+    const count = await models.SongList.count();
+
+    const newSongList = await models.SongList.create({
+      id: count + 1,
+      title,
+      introduction,
+      user_id
+    });
+
+    ctx.body = {
+      code: 0,
+      msg: '创建成功',
+      data: newSongList
+    };
+  } catch (error) {
+    console.error('[创建歌单错误]:', error);
+    ctx.body = { code: -1, msg: '创建失败: ' + error.message };
+  }
+};
+
+// 获取当前用户创建的歌单
+const getCreatedSongLists = async (ctx) => {
+  try {
+    const userId = Number(ctx.query.userId);
+    if (!userId) {
+      ctx.body = { code: -1, msg: '缺少或无效的 userId 参数' };
+      return;
+    }
+
+    const lists = await models.SongList.findAll({
+      where: { user_id: userId },
+      order: [['created_at', 'DESC']]
+    });
+
+    ctx.body = {
+      code: 0,
+      data: lists
+    };
+  } catch (error) {
+    console.error('[getCreatedSongLists 错误]', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
+
+// 根据用户名获取用户ID
+const getUserIdByUsername = async (ctx) => {
+  try {
+    const { username } = ctx.query;
+
+    if (!username) {
+      ctx.body = { code: -1, msg: '缺少 username 参数' };
+      return;
+    }
+
+    const user = await models.Consumer.findOne({
+      where: { username },
+      attributes: ['id', 'username']  // 只返回id和username
+    });
+
+    if (!user) {
+      ctx.body = { code: -1, msg: '用户不存在' };
+      return;
+    }
+
+    ctx.body = {
+      code: 0,
+      data: {
+        user_id: user.id,
+        username: user.username
+      }
+    };
+  } catch (error) {
+    console.error('[getUserIdByUsername 错误]:', error);
+    ctx.body = { code: -1, msg: error.message };
+  }
+};
+
+
 module.exports = {
   getSwipers: dataHandler('Swiper'),
   getSongs: dataHandler('Song', includeOptions.Song),
   getSingers: dataHandler('Singer'),
   getSingerById,
-  getSongLists: dataHandler('SongList'),
+  getSongLists: dataHandler('SongList', {
+    where: {
+      user_id: null 
+    }
+  }),  
   getListSongs: dataHandler('ListSong', includeOptions.ListSong),
   getCollects: dataHandler('Collect'),
   addCollect,
@@ -432,5 +528,8 @@ module.exports = {
   getRanks: dataHandler('Rank'),
   getConsumers: dataHandler('Consumer'),
   getAdmins: dataHandler('Admin'),
-  app
+  createSongList,
+  getCreatedSongLists,
+  getUserIdByUsername,
+  app,
 };

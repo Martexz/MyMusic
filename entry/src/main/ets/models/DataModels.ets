@@ -116,3 +116,17 @@ export interface ApiResponse<T> {
   page?: number;
   pageSize?: number;
 }
+
+export interface CreateSongListDto {
+  title: string;
+  introduction?: string;
+  user_id: number;
+}
+
+export interface SongListParams {
+  id?: number
+  title?: string
+  username?: string
+}
+
+

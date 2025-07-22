@@ -19,6 +19,7 @@ export class CommonConstants {
   static readonly PLAYER_PAGE: string = 'pages/PlayerPage';
   static readonly SEARCH_PAGE: string = 'pages/SearchPage';
   static readonly PROFILE_PAGE: string = 'pages/ProfilePage';
+  static readonly MY_SONG_LIST_PAGE: string = 'pages/MySongList';
   
   // 底部导航标签
   static readonly TAB_HOME: number = 0;
@@ -28,7 +29,9 @@ export class CommonConstants {
   
   // 颜色定义
   static readonly PRIMARY_COLOR: string = '#FF6B35';
+  static readonly SECONDARY_COLOR: string = '#E5E5E5';
   static readonly BACKGROUND_COLOR: string = '#F8F9FA';
+  static readonly INPUT_BACKGROUND: string = '#F5F5F5';
   static readonly TEXT_PRIMARY: string = '#212529';
   static readonly TEXT_SECONDARY: string = '#6C757D';
   static readonly TEXT_COLOR_LIGHT_PRIMARY: string = '#212529';

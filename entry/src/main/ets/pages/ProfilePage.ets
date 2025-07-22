@@ -269,6 +269,14 @@ export struct ProfilePage {
     });
   }
 
+  private navigateToMyFavorites() {
+    router.pushUrl({
+      url: 'pages/MyFavoritesPage'
+    }).catch((error: Error) => {
+      console.error('跳转到我的收藏失败:', error);
+    });
+  }
+
   private handleLogout() {
     this.userManager.logout();
   }

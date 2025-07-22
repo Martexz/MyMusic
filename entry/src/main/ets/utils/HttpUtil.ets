@@ -1,5 +1,5 @@
 import http from '@ohos.net.http';
-import { ApiResponse } from '../models/DataModels';
+import { ApiResponse, CreateSongListDto, Song, SongList } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
 
 /**
@@ -129,4 +129,67 @@ export class HttpUtil {
       });
     });
   }
+
+  /**
+   * 创建歌单
+   */
+  static async createSongList(data: CreateSongListDto): Promise<ApiResponse<SongList>> {
+    return new Promise((resolve, reject) => {
+      const httpRequest = http.createHttp();
+
+      httpRequest.request(CommonConstants.BASE_URL + 'api/songLists/create', {
+        method: http.RequestMethod.POST,
+        header: {
+          'Content-Type': 'application/json'
+        },
+        extraData: JSON.stringify(data)
+      }, (err, response) => {
+        if (!err) {
+          try {
+            const result = JSON.parse(response.result.toString()) as ApiResponse<SongList>;
+            resolve(result);
+          } catch (parseError) {
+            reject(parseError);
+          }
+        } else {
+          reject(err);
+        }
+        httpRequest.destroy();
+      });
+    });
+  }
+
+
+  static async getCreatedSongLists(userId: number): Promise<SongList[]> {
+    return new Promise((resolve, reject) => {
+      const httpRequest = http.createHttp();
+
+      const url = `${CommonConstants.BASE_URL}api/songLists/created?userId=${encodeURIComponent(userId.toString())}`;
+
+      httpRequest.request(url, {
+        method: http.RequestMethod.GET,
+        header: {
+          'Content-Type': 'application/json'
+        }
+      }, (err, data) => {
+        if (!err) {
+          try {
+            const result = JSON.parse(data.result.toString()) as ApiResponse<SongList[]>;
+            if (result.code === 0 && result.data) {
+              resolve(result.data);
+            } else {
+              console.error('getCreatedSongLists API error:', result.msg);
+              resolve([]);
+            }
+          } catch (parseError) {
+            reject(parseError);
+          }
+        } else {
+          reject(err);
+        }
+        httpRequest.destroy();
+      });
+    });
+  }
+
 }

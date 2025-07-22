@@ -17,9 +17,12 @@ router.get('/collects/check', api.checkCollect);
 router.post('/login', api.login);
 router.post('/register', api.register);
 router.put('/users/:id', api.updateUser);
+router.get('/user/id', api.getUserIdByUsername);
 router.get('/comments', api.getComments);
 router.get('/ranks', api.getRanks);
 router.get('/consumers', api.getConsumers);
 router.get('/admins', api.getAdmins);
+router.post('/songLists/create', api.createSongList);
+router.get('/songLists/created', api.getCreatedSongLists);
 
 module.exports = router;
