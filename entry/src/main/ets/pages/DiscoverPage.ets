@@ -5,6 +5,8 @@ import { SongItem } from '../components/SongItem';
 import { SingerItem } from '../components/SingerItem';
 import { SongListItem } from '../components/SongListItem';
 import themeManager, { ThemeMode } from '../common/ThemeManager';
+import { VoiceInputButton, VoiceInputDialog } from '../components/VoiceInputComponent';
+import promptAction from '@ohos.promptAction';
 
 interface SearchResults {
   songs: Song[];
@@ -31,6 +33,20 @@ export struct DiscoverPage {
   @State showHistory: boolean = false;
   @State searchHistory: SearchHistoryItem[] = [];
   @State themeMode: ThemeMode = themeManager.themeMode;
+  
+  // 语音输入弹窗控制器
+  voiceDialogController: CustomDialogController = new CustomDialogController({
+    builder: VoiceInputDialog({
+      onConfirm: (text: string) => {
+        this.handleVoiceResult(text);
+      },
+      onCancel: () => {
+        console.log('语音输入已取消');
+      }
+    }),
+    customStyle: true,
+    autoCancel: true
+  });
 
   private readonly onThemeChanged = (mode: ThemeMode): void => {
     this.themeMode = mode;
@@ -45,6 +61,30 @@ export struct DiscoverPage {
   aboutToDisappear() {
     themeManager.off(this.onThemeChanged);
   }
+  
+  /**
+   * 处理语音识别结果
+   */
+  private handleVoiceResult(text: string) {
+    if (text && text.trim()) {
+      this.searchKeyword = text.trim();
+      this.showHistory = false;
+      this.performSearch();
+      
+      promptAction.showToast({
+        message: `正在搜索: ${text}`,
+        duration: 1500
+      });
+    }
+  }
+  
+  /**
+   * 显示语音输入弹窗
+   */
+  private showVoiceDialog() {
+    this.voiceDialogController.open();
+  }
+  
   private getBackgroundColor(): string {
     return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
   }
@@ -243,7 +283,7 @@ export struct DiscoverPage {
     Column() {
       // 搜索框区域
       Row() {
-        TextInput({ placeholder: '搜索歌曲、歌手、歌单' })
+        TextInput({ placeholder: '搜索歌曲、歌手、歌单', text: this.searchKeyword })
           .layoutWeight(1)
           .height(40)
           .fontColor(this.getTextPrimary())
@@ -258,13 +298,27 @@ export struct DiscoverPage {
             this.showHistory = true;
           })
 
+        // 语音输入按钮
+        VoiceInputButton({
+          onVoiceResult: (text: string) => {
+            this.handleVoiceResult(text);
+          },
+          onError: (error: string) => {
+            promptAction.showToast({ 
+              message: error,
+              duration: 2000 
+            });
+          }
+        })
+        .margin({ left: 8, right: 8 })
+
         Button('搜索')
           .width(80)
           .height(40)
           .type(ButtonType.Capsule)
           .backgroundColor(CommonConstants.PRIMARY_COLOR)
           .fontColor(Color.White)
-          .margin({ left: 12 })
+          .margin({ left: 4 })
           .onClick(() => {
             this.showHistory = false;
             this.performSearch();
