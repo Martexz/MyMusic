@@ -1,4 +1,5 @@
 import { Song, PlayerState, PlayMode } from '../models/DataModels';
+import { AudioPlayerService, PlayState } from '../services/AudioPlayerService';
 
 /**
  * 音乐播放器管理类
@@ -7,6 +8,8 @@ export class PlayerManager {
   private static instance: PlayerManager;
   private playerState: PlayerState;
   private listeners: Array<(state: PlayerState) => void> = [];
+  private audioService: AudioPlayerService;
+  private timeUpdateTimer: number = -1;
   
   private constructor() {
     this.playerState = {
@@ -17,6 +20,9 @@ export class PlayerManager {
       duration: 0,
       playMode: PlayMode.SEQUENCE
     };
+    
+    this.audioService = AudioPlayerService.getInstance();
+    this.setupAudioServiceCallbacks();
   }
   
   static getInstance(): PlayerManager {
@@ -24,6 +30,69 @@ export class PlayerManager {
       PlayerManager.instance = new PlayerManager();
     }
     return PlayerManager.instance;
+  }
+  
+  /**
+   * 设置音频服务回调
+   */
+  private setupAudioServiceCallbacks(): void {
+    // 播放状态变化回调
+    this.audioService.setOnStateChange((state: PlayState) => {
+      this.playerState.isPlaying = (state === PlayState.PLAYING);
+      this.notifyListeners();
+    });
+    
+    // 时间更新回调
+    this.audioService.setOnTimeUpdate((currentTime: number, duration: number) => {
+      this.playerState.currentTime = currentTime;
+      this.playerState.duration = duration;
+      this.notifyListeners();
+    });
+    
+    // 播放完成回调
+    this.audioService.setOnCompleted(() => {
+      this.handlePlayCompleted();
+    });
+    
+    // 错误回调
+    this.audioService.setOnError((error: string) => {
+      console.error('播放错误:', error);
+      this.playerState.isPlaying = false;
+      this.notifyListeners();
+    });
+  }
+  
+  /**
+   * 处理播放完成
+   */
+  private handlePlayCompleted(): void {
+    switch (this.playerState.playMode) {
+      case PlayMode.SINGLE:
+        // 单曲循环，重新播放当前歌曲
+        this.playCurrent();
+        break;
+      case PlayMode.SEQUENCE:
+        // 顺序播放，播放下一首
+        if (this.playerState.currentIndex < this.playerState.playlist.length - 1) {
+          this.next();
+        } else {
+          // 播放列表结束
+          this.playerState.isPlaying = false;
+          this.notifyListeners();
+        }
+        break;
+      case PlayMode.LOOP:
+        // 列表循环，播放下一首，如果是最后一首则回到第一首
+        this.next();
+        break;
+      case PlayMode.RANDOM:
+        // 随机播放下一首
+        this.playRandom();
+        break;
+      default:
+        this.next();
+        break;
+    }
   }
   
   /**
@@ -71,7 +140,7 @@ export class PlayerManager {
   /**
    * 播放指定歌曲
    */
-  playSong(song: Song, playlist?: Song[]): void {
+  async playSong(song: Song, playlist?: Song[]): Promise<void> {
     if (playlist) {
       this.setPlaylist(playlist);
       const index = playlist.findIndex(s => s.id === song.id);
@@ -88,22 +157,42 @@ export class PlayerManager {
     }
     
     this.playerState.currentSong = song;
-    this.playerState.isPlaying = true;
     this.notifyListeners();
+    
+    // 使用音频服务播放歌曲
+    await this.audioService.playSong(song);
+  }
+  
+  /**
+   * 播放当前歌曲
+   */
+  async playCurrent(): Promise<void> {
+    if (this.playerState.currentIndex >= 0 && this.playerState.playlist.length > 0) {
+      const currentSong = this.playerState.playlist[this.playerState.currentIndex];
+      await this.audioService.playSong(currentSong);
+    }
   }
   
   /**
    * 播放/暂停
    */
-  togglePlay(): void {
-    this.playerState.isPlaying = !this.playerState.isPlaying;
-    this.notifyListeners();
+  async togglePlay(): Promise<void> {
+    if (this.audioService.isPlaying()) {
+      await this.audioService.pause();
+    } else {
+      if (this.audioService.getCurrentSong()) {
+        await this.audioService.resume();
+      } else {
+        // 如果没有当前歌曲，播放播放列表中的第一首
+        await this.playCurrent();
+      }
+    }
   }
   
   /**
    * 下一首
    */
-  next(): void {
+  async next(): Promise<void> {
     if (this.playerState.playlist.length === 0) return;
     
     let nextIndex: number;
@@ -128,12 +217,15 @@ export class PlayerManager {
     this.playerState.currentIndex = nextIndex;
     this.playerState.currentSong = this.playerState.playlist[nextIndex];
     this.notifyListeners();
+    
+    // 播放下一首歌曲
+    await this.audioService.playSong(this.playerState.playlist[nextIndex]);
   }
   
   /**
    * 上一首
    */
-  previous(): void {
+  async previous(): Promise<void> {
     if (this.playerState.playlist.length === 0) return;
     
     let prevIndex: number;
@@ -152,6 +244,23 @@ export class PlayerManager {
     this.playerState.currentIndex = prevIndex;
     this.playerState.currentSong = this.playerState.playlist[prevIndex];
     this.notifyListeners();
+    
+    // 播放上一首歌曲
+    await this.audioService.playSong(this.playerState.playlist[prevIndex]);
+  }
+  
+  /**
+   * 随机播放
+   */
+  async playRandom(): Promise<void> {
+    if (this.playerState.playlist.length === 0) return;
+    
+    const randomIndex = Math.floor(Math.random() * this.playerState.playlist.length);
+    this.playerState.currentIndex = randomIndex;
+    this.playerState.currentSong = this.playerState.playlist[randomIndex];
+    this.notifyListeners();
+    
+    await this.audioService.playSong(this.playerState.playlist[randomIndex]);
   }
   
   /**
@@ -174,37 +283,38 @@ export class PlayerManager {
     this.notifyListeners();
   }
   
-  /**
-   * 跳转到指定位置
+    /**
+   * 跳转到指定时间
    */
-  seekTo(position: number): void {
-    this.playerState.currentTime = position;
-    this.notifyListeners();
+  async seekTo(time: number): Promise<void> {
+    await this.audioService.seekTo(time);
   }
   
   /**
-   * 播放
+   * 设置音量
    */
-  play(): void {
-    this.playerState.isPlaying = true;
-    this.notifyListeners();
-  }
-  
-  /**
-   * 暂停
-   */
-  pause(): void {
-    this.playerState.isPlaying = false;
-    this.notifyListeners();
+  async setVolume(volume: number): Promise<void> {
+    await this.audioService.setVolume(volume);
   }
   
   /**
    * 停止播放
    */
-  stop(): void {
+  async stop(): Promise<void> {
+    await this.audioService.stop();
     this.playerState.isPlaying = false;
-    this.playerState.currentTime = 0;
     this.notifyListeners();
+  }
+  
+  /**
+   * 释放播放器资源
+   */
+  async release(): Promise<void> {
+    if (this.timeUpdateTimer !== -1) {
+      clearInterval(this.timeUpdateTimer);
+      this.timeUpdateTimer = -1;
+    }
+    await this.audioService.release();
   }
   
   /**
@@ -277,31 +387,14 @@ export class PlayerManager {
     });
     this.notifyListeners();
   }
-  
-  /**
-   * 设置播放速度
-   */
-  setPlaybackSpeed(speed: number): void {
-    // TODO: 实现播放速度设置
-    console.log('设置播放速度:', speed);
-  }
-  
-  /**
-   * 设置音量
-   */
-  setVolume(volume: number): void {
-    // TODO: 实现音量设置
-    console.log('设置音量:', volume);
-  }
-
   /**
    * 播放歌单
    */
-  static playPlaylist(songs: Song[], startIndex: number = 0): void {
+  static async playPlaylist(songs: Song[], startIndex: number = 0): Promise<void> {
     const instance = PlayerManager.getInstance();
     instance.setPlaylist(songs, startIndex);
     if (songs.length > 0 && startIndex < songs.length) {
-      instance.playSong(songs[startIndex], songs);
+      await instance.playSong(songs[startIndex], songs);
     }
   }
 }

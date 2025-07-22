@@ -149,9 +149,9 @@ export struct SongItem {
     .borderRadius({ topLeft: 16, topRight: 16 })
   }
 
-  private playSong() {
+  private async playSong() {
     const playerManager = PlayerManager.getInstance();
-    playerManager.playSong(this.song);
+    await playerManager.playSong(this.song);
   }
 
   private showMoreOptions() {

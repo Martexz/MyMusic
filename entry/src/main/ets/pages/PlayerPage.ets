@@ -44,12 +44,21 @@ struct PlayerPage {
   }
   
   /**
-   * 格式化时间
+   * 格式化时间 - 将秒数转换为 mm:ss 格式
    */
   private formatTime(seconds: number): string {
+    // 确保seconds是有效数字
+    if (!seconds || isNaN(seconds) || seconds < 0) {
+      return '00:00';
+    }
+    
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    
+    // 限制最大显示时间为99:59
+    const displayMins = Math.min(mins, 99);
+    
+    return `${displayMins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   
   /**
@@ -155,8 +164,8 @@ struct PlayerPage {
               .trackColor('#33FFFFFF')
               .selectedColor(Color.White)
               .blockColor(Color.White)
-              .onChange((value: number) => {
-                this.playerManager.seekTo(value);
+              .onChange(async (value: number) => {
+                await this.playerManager.seekTo(value);
               })
             
             Row() {
@@ -193,8 +202,8 @@ struct PlayerPage {
             Image($r('app.media.ic_public_play_last'))
               .width(32)
               .height(32)
-              .onClick(() => {
-                this.playerManager.previous();
+              .onClick(async () => {
+                await this.playerManager.previous();
               })
             
             Blank()
@@ -206,8 +215,8 @@ struct PlayerPage {
               .borderRadius(28)
               .backgroundColor('#FFFFFF')
               .padding(12)
-              .onClick(() => {
-                this.playerManager.togglePlay();
+              .onClick(async () => {
+                await this.playerManager.togglePlay();
               })
             
             Blank()
@@ -216,8 +225,8 @@ struct PlayerPage {
             Image($r('app.media.ic_public_play_next'))
               .width(32)
               .height(32)
-              .onClick(() => {
-                this.playerManager.next();
+              .onClick(async () => {
+                await this.playerManager.next();
               })
             
             Blank()

@@ -127,6 +127,18 @@
     {
       "name": "network_info_permission_reason",
       "value": "需要网络状态权限来检查网络连接"
+    },
+    {
+      "name": "media_location_permission_reason",
+      "value": "需要媒体位置权限来播放音乐文件"
+    },
+    {
+      "name": "read_media_permission_reason",
+      "value": "需要读取媒体权限来访问音乐文件"
+    },
+    {
+      "name": "write_media_permission_reason",
+      "value": "需要写入媒体权限来缓存音乐文件"
     }
   ]
 }
