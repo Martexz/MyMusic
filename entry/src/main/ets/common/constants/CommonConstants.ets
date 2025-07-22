@@ -4,7 +4,7 @@
 export class CommonConstants {
   // 服务器配置
   // 开发环境 - 本地服务器
-  static readonly BASE_URL: string = 'http://10.136.50.119:3000/';
+  static readonly BASE_URL: string = 'http://10.130.3.83:8000/';
   
   // 生产环境配置示例 (根据需要修改)
   // static readonly BASE_URL: string = 'http://your-server-domain.com/';
@@ -12,6 +12,8 @@ export class CommonConstants {
   // 如果后端运行在不同端口，请修改上面的URL，例如：
   // static readonly BASE_URL: string = 'http://localhost:8080/';
   
+  static readonly BACKGROUND_LIGHT: string = '#eeeeee';
+  static readonly BACKGROUND_DARK: string = '#ff212020';
   // 页面路由
   static readonly MAIN_PAGE: string = 'pages/MainPage';
   static readonly PLAYER_PAGE: string = 'pages/PlayerPage';
@@ -29,6 +31,10 @@ export class CommonConstants {
   static readonly BACKGROUND_COLOR: string = '#F8F9FA';
   static readonly TEXT_PRIMARY: string = '#212529';
   static readonly TEXT_SECONDARY: string = '#6C757D';
+  static readonly TEXT_COLOR_LIGHT_PRIMARY: string = '#212529';
+  static readonly TEXT_COLOR_LIGHT_SECONDARY: string = '#6C757D';
+  static readonly TEXT_COLOR_DARK_PRIMARY: string = '#FFFFFF';
+  static readonly TEXT_COLOR_DARK_SECONDARY: string = '#CCCCCC';
   
   // 尺寸定义
   static readonly BORDER_RADIUS: number = 12;

@@ -5,6 +5,8 @@
     "pages/SingerDetailPage",
     "pages/LoginPage",
     "pages/UserProfilePage",
-    "pages/MyFavoritesPage"
+    "pages/MyFavoritesPage",
+    "pages/SettingsPage",
+    "pages/ThemeModePage"
   ]
 }

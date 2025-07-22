@@ -4,6 +4,7 @@ import { Song, Singer, SongList } from '../models/DataModels';
 import { SongItem } from '../components/SongItem';
 import { SingerItem } from '../components/SingerItem';
 import { SongListItem } from '../components/SongListItem';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 
 interface SearchResults {
   songs: Song[];
@@ -29,20 +30,47 @@ export struct DiscoverPage {
   @State hasSearched: boolean = false;
   @State showHistory: boolean = false;
   @State searchHistory: SearchHistoryItem[] = [];
+  @State themeMode: ThemeMode = themeManager.themeMode;
+
+  private readonly onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  aboutToAppear() {
+    this.loadSearchHistory();
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
+  }
+
+  private getTabTextColor(isActive: boolean): string {
+    return isActive ? CommonConstants.PRIMARY_COLOR : this.getTextSecondary();
+  }
 
   private tabs: string[] = ['歌曲', '歌手', '歌单', '排行榜'];
   private maxHistoryCount: number = 10;
 
-  aboutToAppear() {
-    this.loadSearchHistory();
-  }
 
   @Builder
   TabBuilder(title: string, index: number) {
     Column() {
       Text(title)
         .fontSize(16)
-        .fontColor(this.activeTab === index ? CommonConstants.PRIMARY_COLOR : CommonConstants.TEXT_SECONDARY)
+        .fontColor(this.getTabTextColor(this.activeTab === index))
         .fontWeight(this.activeTab === index ? FontWeight.Bold : FontWeight.Normal)
 
       if (this.activeTab === index) {
@@ -64,8 +92,9 @@ export struct DiscoverPage {
     Row() {
       Text(item.keyword)
         .fontSize(14)
+        .fontColor(this.themeMode==='dark'?CommonConstants.TEXT_COLOR_DARK_SECONDARY:"#000000")
         .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-        .backgroundColor('#f5f5f5')
+        .backgroundColor(this.themeMode==='dark'?"#ff6b6969":"#eeeeee")
         .borderRadius(15)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -74,17 +103,19 @@ export struct DiscoverPage {
         Image('resources/base/media/ic_public_cancel.svg')
           .width(12)
           .height(12)
-          .backgroundColor("#eeeeee")
+          .fillColor(this.themeMode==='dark'?CommonConstants.TEXT_COLOR_DARK_SECONDARY:"#000000")
+          .backgroundColor(this.themeMode==='dark'? "#ff6b6969" :"#eeeeee")
       }
       .type(ButtonType.Normal)
-      .margin({ left: 4 })
+      .margin({ left: 4 , right: 6})
       .opacity(0.6)
+      .backgroundColor(this.themeMode==='dark'?"#ff6b6969":"#eeeeee")
       .onClick(() => {
         this.removeHistoryItem(item);
       })
     }
     .borderRadius(15)
-    .backgroundColor('#f5f5f5')
+    .backgroundColor(this.themeMode==='dark'?"#ff6b6969":"#eeeeee")
     .padding({ right: 8 })
     .margin({ right: 8, bottom: 8 })
     .onClick(() => {
@@ -115,11 +146,11 @@ export struct DiscoverPage {
       } else if (this.hasSearched) {
         Text('暂无搜索结果')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
       } else {
         Text('请输入关键词搜索歌曲')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
       }
     }
     .width('100%')
@@ -181,11 +212,11 @@ export struct DiscoverPage {
       } else if (this.hasSearched) {
         Text('暂无搜索结果')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
       } else {
         Text('请输入关键词搜索歌单')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
       }
     }
     .width('100%')
@@ -201,7 +232,7 @@ export struct DiscoverPage {
         .fontSize(16)
       Text('暂无排行榜数据')
         .fontSize(14)
-        .fontColor(CommonConstants.TEXT_SECONDARY)
+        .fontColor(this.getTextSecondary())
     }
     .width('100%')
     .height('100%')
@@ -215,7 +246,9 @@ export struct DiscoverPage {
         TextInput({ placeholder: '搜索歌曲、歌手、歌单' })
           .layoutWeight(1)
           .height(40)
-          .backgroundColor(Color.White)
+          .fontColor(this.getTextPrimary())
+          .placeholderColor(this.getTextPrimary())
+          .backgroundColor(this.themeMode==='dark'?"#ff454343":"#ffffff")
           .borderRadius(20)
           .padding({ left: 16, right: 16 })
           .onChange((value: string) => {
@@ -247,11 +280,12 @@ export struct DiscoverPage {
             Text('搜索历史')
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
+              .fontColor(this.getTextSecondary())
 
             if (this.searchHistory.length > 0) {
               Button('清空全部')
                 .fontSize(14)
-                .fontColor('#666')
+                .fontColor(this.getTextSecondary())
                 .type(ButtonType.Normal)
                 .backgroundColor(Color.Transparent)
                 .margin({ left: 8 })
@@ -288,7 +322,7 @@ export struct DiscoverPage {
           }
         }
         .width('100%')
-        .backgroundColor(Color.White)
+        .backgroundColor(this.themeMode==='dark'?"#ff454343":"#ffffff")
         .borderRadius(8)
         .margin({ top: 8 })
         .padding({ bottom: 8 })
@@ -303,7 +337,7 @@ export struct DiscoverPage {
       }
       .width('100%')
       .margin({ top: 8 })
-      .backgroundColor(Color.White)
+      .backgroundColor(this.themeMode==='dark'?"#ff454343":"#ffffff")
 
       // 内容区域
       Tabs({ index: this.activeTab }) {
@@ -328,7 +362,7 @@ export struct DiscoverPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(CommonConstants.BACKGROUND_COLOR)
+    .backgroundColor(this.getBackgroundColor())
     .onClick(() => {
       this.showHistory = false;
     })

@@ -5,11 +5,11 @@ import { MainPage } from './MainPage';
 @Component
 struct Index {
   build() {
-    Navigation() {
+    Column() {
       MainPage()
     }
-    .titleMode(NavigationTitleMode.Mini)
-    .hideBackButton(true)
+    .width('100%')
+    .height('100%')
     .backgroundColor(CommonConstants.BACKGROUND_COLOR)
   }
 }
