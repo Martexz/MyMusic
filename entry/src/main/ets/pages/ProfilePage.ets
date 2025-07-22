@@ -199,15 +199,6 @@ export struct ProfilePage {
         .color('#F0F0F0')
         .margin({ left: CommonConstants.MARGIN_MEDIUM, right: CommonConstants.MARGIN_MEDIUM })
 
-      // 最近播放
-      this.MenuItem('最近播放', $r('app.media.ic_public_play_last'), () => {
-        // 跳转到历史页面
-      })
-
-      Divider()
-        .color('#F0F0F0')
-        .margin({ left: CommonConstants.MARGIN_MEDIUM, right: CommonConstants.MARGIN_MEDIUM })
-
       if (this.isLogin) {
         // 退出登录
         this.MenuItem('退出登录', $r('app.media.ic_public_back'), () => {
