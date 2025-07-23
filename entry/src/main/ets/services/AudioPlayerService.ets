@@ -70,13 +70,15 @@ export class AudioPlayerService {
     if (!this.audioPlayer) return;
     
     // 状态变化回调
-    this.audioPlayer.on('stateChange', (state: string) => {
+    this.audioPlayer.on('stateChange', (state: media.AVPlayerState) => {
       console.log('播放器状态变化:', state);
       switch (state) {
         case 'idle':
           this.playState = PlayState.IDLE;
           break;
         case 'initialized':
+          // 仅为内部状态，UI层面可忽略
+          break;
         case 'prepared':
           this.playState = PlayState.PREPARED;
           break;
@@ -91,6 +93,10 @@ export class AudioPlayerService {
           break;
         case 'error':
           this.playState = PlayState.ERROR;
+          break;
+        default:
+          // 处理未预期的状态
+          console.warn(`未知的播放器状态: ${state}`);
           break;
       }
       this.onStateChangeCallback?.(this.playState);
@@ -126,65 +132,89 @@ export class AudioPlayerService {
       this.onErrorCallback?.(`播放错误: ${error.message}`);
     });
   }
+
+  /**
+   * 等待播放器达到指定状态
+   */
+  private waitForState(targetState: 'idle' | 'initialized' | 'prepared', timeout: number = 5000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.audioPlayer) {
+        return reject(new Error('播放器未初始化'));
+      }
+
+      // 如果当前状态已经是目标状态，直接返回
+      if (this.audioPlayer.state === targetState) {
+        return resolve();
+      }
+
+      const timeoutId = setTimeout(() => {
+        this.audioPlayer!.off('stateChange', stateChangeCallback);
+        reject(new Error(`等待状态 ${targetState} 超时`));
+      }, timeout);
+
+      const stateChangeCallback = (state: media.AVPlayerState) => {
+        if (state === targetState) {
+          clearTimeout(timeoutId);
+          this.audioPlayer!.off('stateChange', stateChangeCallback);
+          resolve();
+        }
+      };
+
+      this.audioPlayer.on('stateChange', stateChangeCallback);
+    });
+  }
   
   /**
    * 播放歌曲
    */
   async playSong(song: Song): Promise<boolean> {
     try {
+      console.log('=== playSong: 开始处理歌曲', { id: song.id, name: song.name });
+
       if (!this.audioPlayer) {
+        console.log('playSong: 播放器未初始化，正在初始化...');
         const initSuccess = await this.initPlayer();
         if (!initSuccess) {
+          console.error('playSong: 初始化播放器失败');
           return false;
         }
       }
-      
-      // 如果是同一首歌且处于暂停状态，直接恢复播放
-      if (this.currentSong?.id === song.id && this.playState === PlayState.PAUSED) {
+
+      // 如果是同一首歌且播放器处于暂停状态，直接恢复播放
+      if (this.currentSong?.id === song.id && this.audioPlayer?.state === 'paused') {
+        console.log('playSong: 恢复播放同一首歌曲');
         return await this.resume();
       }
-      
-      // 停止当前播放
-      if (this.playState === PlayState.PLAYING || this.playState === PlayState.PAUSED) {
-        await this.stop();
-      }
-      
+
+      console.log('playSong: 准备播放新歌曲或重新播放，重置播放器...');
+      await this.audioPlayer!.reset();
+      await this.waitForState('idle');
+      console.log('playSong: 播放器已重置到 idle 状态');
+
       this.currentSong = song;
       this.playState = PlayState.PREPARING;
       this.onStateChangeCallback?.(this.playState);
-      
-      // 构建音频URL
+
       const audioUrl = this.buildAudioUrl(song.url || '');
-      
-      console.log('准备播放音频:', {
-        songName: song.name,
-        songId: song.id,
-        databaseUrl: song.url,
-        finalUrl: audioUrl
-      });
-      
-      // 验证音频URL
-      const isValidUrl = await this.validateAudioUrl(audioUrl);
-      if (!isValidUrl) {
-        throw new Error('音频文件不可访问');
-      }
-      
-      // 设置音频源
+      console.log('playSong: 设置播放器 URL:', audioUrl);
       this.audioPlayer!.url = audioUrl;
-      
-      // 准备播放
+      await this.waitForState('initialized');
+      console.log('playSong: 播放器已进入 initialized 状态');
+
+      console.log('playSong: 准备播放器...');
       await this.audioPlayer!.prepare();
-      
-      // 开始播放
+      await this.waitForState('prepared');
+      console.log('playSong: 播放器已进入 prepared 状态');
+
+      console.log('playSong: 开始播放...');
       await this.audioPlayer!.play();
-      
-      console.log('开始播放歌曲:', song.name);
+      // 手动触发状态更新回调，确保UI立即显示为播放状态
+      this.playState = PlayState.PLAYING;
+      this.onStateChangeCallback?.(this.playState);
+      console.log('playSong: 成功开始播放歌曲:', song.name);
       return true;
     } catch (error) {
-      console.error('播放歌曲失败:', {
-        songName: song.name,
-        error: error
-      });
+      console.error('playSong: 播放歌曲失败', { song: song.name, error: error });
       this.playState = PlayState.ERROR;
       this.onErrorCallback?.(`播放失败: ${error}`);
       return false;
@@ -196,10 +226,15 @@ export class AudioPlayerService {
    */
   async pause(): Promise<boolean> {
     try {
-      if (this.audioPlayer && this.playState === PlayState.PLAYING) {
+      // 直接检查播放器的原生状态，避免UI状态延迟
+      if (this.audioPlayer && this.audioPlayer.state === 'playing') {
         await this.audioPlayer.pause();
+        // 手动触发状态更新回调，确保UI立即响应
+        this.playState = PlayState.PAUSED;
+        this.onStateChangeCallback?.(this.playState);
         return true;
       }
+      console.warn(`Pause called when state is not 'playing'. Current AVPlayer state: ${this.audioPlayer?.state}`);
       return false;
     } catch (error) {
       console.error('暂停播放失败:', error);
@@ -213,10 +248,15 @@ export class AudioPlayerService {
    */
   async resume(): Promise<boolean> {
     try {
-      if (this.audioPlayer && this.playState === PlayState.PAUSED) {
+      // 直接检查播放器的原生状态，避免UI状态延迟
+      if (this.audioPlayer && this.audioPlayer.state === 'paused') {
         await this.audioPlayer.play();
+        // 手动触发状态更新回调，确保UI立即响应
+        this.playState = PlayState.PLAYING;
+        this.onStateChangeCallback?.(this.playState);
         return true;
       }
+      console.warn(`Resume called when state is not 'paused'. Current AVPlayer state: ${this.audioPlayer?.state}`);
       return false;
     } catch (error) {
       console.error('恢复播放失败:', error);
@@ -359,7 +399,8 @@ export class AudioPlayerService {
   }
   
   isPlaying(): boolean {
-    return this.playState === PlayState.PLAYING;
+    // 直接检查播放器的原生状态，确保UI能获取到最准确的播放状态
+    return this.audioPlayer?.state === 'playing';
   }
   
   // 事件监听器设置
