@@ -1,5 +1,6 @@
 import { VoiceRecognitionService } from '../services/VoiceRecognitionService';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import promptAction from '@ohos.promptAction';
 
 /**
@@ -20,6 +21,7 @@ export struct VoiceInputButton {
   @State voiceStatus: VoiceInputStatus = VoiceInputStatus.IDLE;
   @State statusText: string = '';
   @State isListening: boolean = false;
+  @State themeMode: ThemeMode = themeManager.themeMode;
   
   // 回调函数
   onVoiceResult?: (text: string) => void;
@@ -28,8 +30,26 @@ export struct VoiceInputButton {
   private voiceService: VoiceRecognitionService = VoiceRecognitionService.getInstance();
   
   aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
     // 检查语音识别是否可用
     this.checkVoiceAvailability();
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
   }
   
   /**

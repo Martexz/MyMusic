@@ -1,10 +1,30 @@
 import { SongList } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { ImageUtil } from '../utils/ImageUtil';
+import { ThemeMode } from '../common/ThemeManager';
 
 @Component
 export struct SongListItem {
   @Prop songList: SongList;
+  @Prop themeMode: ThemeMode = 'light'; // ✅ 支持主题模式传入
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.TEXT_COLOR_DARK_PRIMARY
+      : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.TEXT_COLOR_DARK_SECONDARY
+      : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
+  }
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark'
+      ?"#ff393636"
+      : "#ffffff";
+  }
 
   build() {
     Column() {
@@ -23,7 +43,7 @@ export struct SongListItem {
       Column() {
         Text(this.songList.title)
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .fontColor(this.getTextPrimary()) // ✅ 主标题颜色
           .fontWeight(FontWeight.Medium)
           .maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -34,7 +54,7 @@ export struct SongListItem {
         if (this.songList.introduction) {
           Text(this.songList.introduction)
             .fontSize(12)
-            .fontColor(CommonConstants.TEXT_SECONDARY)
+            .fontColor(this.getTextSecondary()) // ✅ 简介颜色
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .textAlign(TextAlign.Start)
@@ -46,7 +66,7 @@ export struct SongListItem {
     }
     .width('100%')
     .padding(CommonConstants.MARGIN_SMALL)
-    .backgroundColor(Color.White)
+    .backgroundColor(this.getBackgroundColor()) //  背景颜色适配
     .borderRadius(CommonConstants.BORDER_RADIUS)
     .onClick(() => {
       this.openSongList();

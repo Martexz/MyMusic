@@ -5,6 +5,7 @@ import { AddToPlaylistDialog } from './AddToPlaylistDialog';
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 import { ImageUtil } from '../utils/ImageUtil';
+import { ThemeMode } from '../common/ThemeManager';
 
 @Component
 export struct SongItem {
@@ -12,6 +13,25 @@ export struct SongItem {
   @Prop showIndex?: boolean = false;
   @Prop index?: number = 0;
   @State showMoreMenu: boolean = false;
+  @Prop themeMode: ThemeMode = 'light'; // 新增主题模式
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.TEXT_COLOR_DARK_PRIMARY
+      : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.TEXT_COLOR_DARK_SECONDARY
+      : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
+  }
+
+  private getBackground(): string {
+    return this.themeMode === 'dark'
+      ?"#ff393636"
+      : "#ffffff";
+  }
 
   private addToPlaylistDialogController: CustomDialogController = new CustomDialogController({
     builder: AddToPlaylistDialog(),
@@ -26,7 +46,7 @@ export struct SongItem {
         Text(this.index.toString())
           .width(30)
           .fontSize(16)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
           .textAlign(TextAlign.Center)
       } else {
         Image(this.song.pic ? ImageUtil.getSongCoverUrl(this.song.pic) : $r('app.media.ic_music_fill'))
@@ -44,7 +64,7 @@ export struct SongItem {
       Column() {
         Text(this.song.name)
           .fontSize(16)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .fontColor(this.getTextPrimary())
           .fontWeight(FontWeight.Medium)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -52,7 +72,7 @@ export struct SongItem {
 
         Text(this.song.singer?.name || '未知歌手')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .alignSelf(ItemAlign.Start)
@@ -69,14 +89,14 @@ export struct SongItem {
       Image($r('app.media.ic_more_vertical_o_icon'))
         .width(24)
         .height(24)
-        .fillColor(CommonConstants.TEXT_SECONDARY)
+        .fillColor(this.getTextSecondary())
         .onClick(() => {
           this.showMoreOptions();
         })
     }
     .width('100%')
     .padding(CommonConstants.MARGIN_SMALL)
-    .backgroundColor(Color.White)
+    .backgroundColor(this.getBackground()) // 动态背景色
     .borderRadius(CommonConstants.BORDER_RADIUS)
     .onClick(() => {
       this.playSong();

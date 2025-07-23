@@ -4,6 +4,8 @@ import { Swiper, Song, SongList } from '../models/DataModels';
 import { SwiperComponent } from '../components/SwiperComponent';
 import { SongItem } from '../components/SongItem';
 import { SongListItem } from '../components/SongListItem';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
+import router from '@ohos.router';
 
 @Component
 export struct HomePage {
@@ -11,12 +13,40 @@ export struct HomePage {
   @State recommendSongs: Song[] = [];
   @State recommendSongLists: SongList[] = [];
   @State loading: boolean = true;
+  @State themeMode: ThemeMode = themeManager.themeMode;
 
-  async aboutToAppear() {
-    await this.loadData();
+  // 监听主题变化
+  aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+    this.loadData();
   }
 
-  async loadData() {
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimaryColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_PRIMARY;
+  }
+
+  private getTextSecondaryColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_SECONDARY;
+  }
+
+  private getLoadingColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.PRIMARY_COLOR : CommonConstants.PRIMARY_COLOR;
+  }
+
+  private async loadData() {
     try {
       this.loading = true;
       
@@ -46,11 +76,12 @@ export struct HomePage {
         LoadingProgress()
           .width(40)
           .height(40)
-          .color(CommonConstants.PRIMARY_COLOR)
+          .color(this.getLoadingColor())
       }
       .width('100%')
       .height('100%')
       .justifyContent(FlexAlign.Center)
+      .backgroundColor(this.getBackgroundColor())
     } else {
       Scroll() {
         Column() {
@@ -66,15 +97,16 @@ export struct HomePage {
               Text('推荐歌曲')
                 .fontSize(18)
                 .fontWeight(FontWeight.Bold)
-                .fontColor(CommonConstants.TEXT_PRIMARY)
-              
+                .fontColor(this.getTextPrimaryColor())
+
               Blank()
               
               Text('更多')
                 .fontSize(14)
-                .fontColor(CommonConstants.TEXT_SECONDARY)
+                .fontColor(this.getTextSecondaryColor())
                 .onClick(() => {
                   // 跳转到更多歌曲页面
+                  router.pushUrl({ url: 'pages/MoreSongsPage' });
                 })
             }
             .width('100%')
@@ -85,7 +117,8 @@ export struct HomePage {
                 SongItem({ 
                   song: song,
                   showIndex: true,
-                  index: index + 1
+                  index: index + 1,
+                  themeMode: this.themeMode
                 })
                   .margin({ bottom: CommonConstants.MARGIN_SMALL })
               })
@@ -100,13 +133,13 @@ export struct HomePage {
               Text('推荐歌单')
                 .fontSize(18)
                 .fontWeight(FontWeight.Bold)
-                .fontColor(CommonConstants.TEXT_PRIMARY)
-              
+                .fontColor(this.getTextPrimaryColor())
+
               Blank()
               
               Text('更多')
                 .fontSize(14)
-                .fontColor(CommonConstants.TEXT_SECONDARY)
+                .fontColor(this.getTextSecondaryColor())
                 .onClick(() => {
                   // 跳转到更多歌单页面
                 })
@@ -117,7 +150,7 @@ export struct HomePage {
             Grid() {
               ForEach(this.recommendSongLists, (songList: SongList) => {
                 GridItem() {
-                  SongListItem({ songList: songList })
+                  SongListItem({ songList: songList, themeMode: this.themeMode })
                 }
               })
             }
@@ -133,6 +166,7 @@ export struct HomePage {
       .scrollBar(BarState.Off)
       .width('100%')
       .height('100%')
+      .backgroundColor(this.getBackgroundColor())
     }
   }
 }

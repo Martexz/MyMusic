@@ -3,6 +3,7 @@ import { UserService } from '../services/UserService';
 import { UserManager } from '../managers/UserManager';
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 
 @Entry
 @Component
@@ -12,9 +13,43 @@ struct LoginPage {
   @State isLoading: boolean = false;
   @State showRegister: boolean = false;
   @State email: string = '';
-  
+  @State themeMode: ThemeMode = themeManager.themeMode;
+
   private userManager: UserManager = UserManager.getInstance();
-  
+
+  aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  }
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.PRIMARY_COLOR;
+  }
+
+  private getContentBackgroundColor(): string {
+    return this.themeMode === 'dark' ? '#1E1E1E' : '#FFFFFF';
+  }
+
+  private getTextPrimaryColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_PRIMARY;
+  }
+
+  private getTextSecondaryColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_SECONDARY;
+  }
+
+  private getInputBackgroundColor(): string {
+    return this.themeMode === 'dark' ? '#2A2A2A' : '#F5F5F5';
+  }
+
   build() {
     Column() {
       // 顶部标题区域
@@ -22,18 +57,18 @@ struct LoginPage {
         Image($r('app.media.ic_music_fill'))
           .width(80)
           .height(80)
-          .fillColor(Color.White)
+          .fillColor(this.getTextPrimaryColor())
           .margin({ bottom: 20 })
         
         Text('MyMusic')
           .fontSize(32)
           .fontWeight(FontWeight.Bold)
-          .fontColor(Color.White)
+          .fontColor(this.getTextPrimaryColor())
           .margin({ bottom: 8 })
         
         Text(this.showRegister ? '创建新账户' : '欢迎回来')
           .fontSize(16)
-          .fontColor('#CCFFFFFF')
+          .fontColor(this.getTextSecondaryColor())
           .margin({ bottom: 40 })
       }
       .width('100%')
@@ -47,18 +82,18 @@ struct LoginPage {
         Column() {
           Text('用户名')
             .fontSize(14)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
+            .fontColor(this.getTextPrimaryColor())
             .alignSelf(ItemAlign.Start)
             .margin({ bottom: 8 })
           
           TextInput({ placeholder: '请输入用户名' })
             .width('100%')
             .height(48)
-            .backgroundColor('#F5F5F5')
+            .backgroundColor(this.getInputBackgroundColor())
             .borderRadius(8)
             .fontSize(16)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
-            .placeholderColor(CommonConstants.TEXT_SECONDARY)
+            .fontColor(this.getTextPrimaryColor())
+            .placeholderColor(this.getTextSecondaryColor())
             .onChange((value: string) => {
               this.username = value;
             })
@@ -70,18 +105,18 @@ struct LoginPage {
         Column() {
           Text('密码')
             .fontSize(14)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
+            .fontColor(this.getTextPrimaryColor())
             .alignSelf(ItemAlign.Start)
             .margin({ bottom: 8 })
           
           TextInput({ placeholder: '请输入密码' })
             .width('100%')
             .height(48)
-            .backgroundColor('#F5F5F5')
+            .backgroundColor(this.getInputBackgroundColor())
             .borderRadius(8)
             .fontSize(16)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
-            .placeholderColor(CommonConstants.TEXT_SECONDARY)
+            .fontColor(this.getTextPrimaryColor())
+            .placeholderColor(this.getTextSecondaryColor())
             .type(InputType.Password)
             .onChange((value: string) => {
               this.password = value;
@@ -95,18 +130,18 @@ struct LoginPage {
           Column() {
             Text('邮箱（可选）')
               .fontSize(14)
-              .fontColor(CommonConstants.TEXT_PRIMARY)
+              .fontColor(this.getTextPrimaryColor())
               .alignSelf(ItemAlign.Start)
               .margin({ bottom: 8 })
             
             TextInput({ placeholder: '请输入邮箱地址' })
               .width('100%')
               .height(48)
-              .backgroundColor('#F5F5F5')
+              .backgroundColor(this.getInputBackgroundColor())
               .borderRadius(8)
               .fontSize(16)
-              .fontColor(CommonConstants.TEXT_PRIMARY)
-              .placeholderColor(CommonConstants.TEXT_SECONDARY)
+              .fontColor(this.getTextPrimaryColor())
+              .placeholderColor(this.getTextSecondaryColor())
               .type(InputType.Email)
               .onChange((value: string) => {
                 this.email = value;
@@ -138,8 +173,8 @@ struct LoginPage {
         Row() {
           Text(this.showRegister ? '已有账户？' : '还没有账户？')
             .fontSize(14)
-            .fontColor(CommonConstants.TEXT_SECONDARY)
-          
+            .fontColor(this.getTextSecondaryColor())
+
           Text(this.showRegister ? '立即登录' : '立即注册')
             .fontSize(14)
             .fontColor(CommonConstants.PRIMARY_COLOR)
@@ -163,13 +198,13 @@ struct LoginPage {
       }
       .width('100%')
       .padding({ left: 32, right: 32 })
-      .backgroundColor(Color.White)
+      .backgroundColor(this.getContentBackgroundColor())
       .borderRadius({ topLeft: 20, topRight: 20 })
       .layoutWeight(1)
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(CommonConstants.PRIMARY_COLOR)
+    .backgroundColor(this.getBackgroundColor())
     .backgroundImage($r('app.media.bg4'))
     .backgroundImageSize(ImageSize.Cover)
   }

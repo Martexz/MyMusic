@@ -88,6 +88,6 @@ export struct MainPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(CommonConstants.BACKGROUND_COLOR)
+    .backgroundColor(this.themeMode==='dark'?CommonConstants.BACKGROUND_DARK:CommonConstants.BACKGROUND_LIGHT)
   }
 }

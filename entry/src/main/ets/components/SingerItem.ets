@@ -1,10 +1,30 @@
 import { Singer } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { ImageUtil } from '../utils/ImageUtil';
+import { ThemeMode } from '../common/ThemeManager';
 
 @Component
 export struct SingerItem {
   @Prop singer: Singer;
+  @Prop themeMode: ThemeMode = 'light'; // ✅ 传入主题模式
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.TEXT_COLOR_DARK_PRIMARY
+      : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.TEXT_COLOR_DARK_SECONDARY
+      : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
+  }
+
+  private getBackground(): string {
+    return this.themeMode === 'dark'
+      ? "#ff393636"
+      : "#ffffff";
+  }
 
   build() {
     Row() {
@@ -23,7 +43,7 @@ export struct SingerItem {
       Column() {
         Text(this.singer.name)
           .fontSize(16)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .fontColor(this.getTextPrimary())
           .fontWeight(FontWeight.Medium)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -32,7 +52,7 @@ export struct SingerItem {
         if (this.singer.introduction) {
           Text(this.singer.introduction)
             .fontSize(14)
-            .fontColor(CommonConstants.TEXT_SECONDARY)
+            .fontColor(this.getTextSecondary())
             .maxLines(2)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .alignSelf(ItemAlign.Start)
@@ -57,7 +77,7 @@ export struct SingerItem {
     }
     .width('100%')
     .padding(CommonConstants.MARGIN_SMALL)
-    .backgroundColor(Color.White)
+    .backgroundColor(this.getBackground()) // 背景色根据主题切换
     .borderRadius(CommonConstants.BORDER_RADIUS)
     .onClick(() => {
       this.openSingerDetail();

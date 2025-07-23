@@ -3,6 +3,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { MusicService } from '../services/MusicService';
 import { UserManager } from '../managers/UserManager';
 import { UserResponse } from '../models/ApiInterfaces';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 
@@ -11,17 +12,34 @@ export struct PlayerOptionsMenu {
   @Prop currentSong?: Song;
   @State isCollected: boolean = false;
   @State currentUser: UserResponse | null = null;
+  @State themeMode: ThemeMode = themeManager.themeMode;
   
   private userManager: UserManager = UserManager.getInstance();
   
   aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+    
     this.currentUser = this.userManager.getCurrentUser();
     this.userManager.addListener(this.onUserChanged.bind(this));
     this.checkCollectStatus();
   }
   
   aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
     this.userManager.removeListener(this.onUserChanged.bind(this));
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
   }
   
   /**
@@ -39,13 +57,13 @@ export struct PlayerOptionsMenu {
         Text('更多选项')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .fontColor(this.getTextPrimary())
         
         Blank()
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 16, bottom: 16 })
-      .backgroundColor(Color.White)
+      .backgroundColor(this.getBackgroundColor())
       
       // 选项列表
       Column() {
@@ -58,7 +76,7 @@ export struct PlayerOptionsMenu {
           
           Text(this.isCollected ? '取消收藏' : '收藏')
             .fontSize(16)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
+            .fontColor(this.getTextPrimary())
             .margin({ left: 16 })
           
           Blank()
@@ -70,7 +88,7 @@ export struct PlayerOptionsMenu {
         })
         
         Divider()
-          .color('#F0F0F0')
+          .color(this.themeMode === 'dark' ? '#2A2A2A' : '#F0F0F0')
           .margin({ left: 20, right: 20 })
         
         // 添加到歌单
@@ -78,11 +96,11 @@ export struct PlayerOptionsMenu {
           Image($r('app.media.ic_playlist_add_icon'))
             .width(24)
             .height(24)
-            .fillColor(CommonConstants.TEXT_PRIMARY)
+            .fillColor(this.getTextPrimary())
           
           Text('添加到歌单')
             .fontSize(16)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
+            .fontColor(this.getTextPrimary())
             .margin({ left: 16 })
           
           Blank()
@@ -94,7 +112,7 @@ export struct PlayerOptionsMenu {
         })
         
         Divider()
-          .color('#F0F0F0')
+          .color(this.themeMode === 'dark' ? '#2A2A2A' : '#F0F0F0')
           .margin({ left: 20, right: 20 })
         
         // 查看专辑
@@ -102,11 +120,11 @@ export struct PlayerOptionsMenu {
           Image($r('app.media.ic_public_folder'))
             .width(24)
             .height(24)
-            .fillColor(CommonConstants.TEXT_PRIMARY)
+            .fillColor(this.getTextPrimary())
           
           Text('查看专辑')
             .fontSize(16)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
+            .fontColor(this.getTextPrimary())
             .margin({ left: 16 })
           
           Blank()
@@ -118,7 +136,7 @@ export struct PlayerOptionsMenu {
         })
         
         Divider()
-          .color('#F0F0F0')
+          .color(this.themeMode === 'dark' ? '#2A2A2A' : '#F0F0F0')
           .margin({ left: 20, right: 20 })
         
         // 歌曲信息
@@ -126,11 +144,11 @@ export struct PlayerOptionsMenu {
           Image($r('app.media.ic_public_help'))
             .width(24)
             .height(24)
-            .fillColor(CommonConstants.TEXT_PRIMARY)
+            .fillColor(this.getTextPrimary())
           
           Text('歌曲信息')
             .fontSize(16)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
+            .fontColor(this.getTextPrimary())
             .margin({ left: 16 })
           
           Blank()
@@ -142,7 +160,7 @@ export struct PlayerOptionsMenu {
         })
         
         Divider()
-          .color('#F0F0F0')
+          .color(this.themeMode === 'dark' ? '#2A2A2A' : '#F0F0F0')
           .margin({ left: 20, right: 20 })
         
         // 分享
@@ -150,11 +168,11 @@ export struct PlayerOptionsMenu {
           Image($r('app.media.ic_public_share_filled'))
             .width(24)
             .height(24)
-            .fillColor(CommonConstants.TEXT_PRIMARY)
+            .fillColor(this.getTextPrimary())
           
           Text('分享')
             .fontSize(16)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
+            .fontColor(this.getTextPrimary())
             .margin({ left: 16 })
           
           Blank()
@@ -167,18 +185,18 @@ export struct PlayerOptionsMenu {
         
         // 定时关闭
         Divider()
-          .color('#F0F0F0')
+          .color(this.themeMode === 'dark' ? '#2A2A2A' : '#F0F0F0')
           .margin({ left: 20, right: 20 })
         
         Row() {
           Image($r('app.media.ic_timer_icon'))
             .width(24)
             .height(24)
-            .fillColor(CommonConstants.TEXT_PRIMARY)
+            .fillColor(this.getTextPrimary())
           
           Text('定时关闭')
             .fontSize(16)
-            .fontColor(CommonConstants.TEXT_PRIMARY)
+            .fontColor(this.getTextPrimary())
             .margin({ left: 16 })
           
           Blank()
@@ -189,10 +207,10 @@ export struct PlayerOptionsMenu {
           this.setSleepTimer();
         })
       }
-      .backgroundColor(Color.White)
+      .backgroundColor(this.getBackgroundColor())
     }
     .width('100%')
-    .backgroundColor(Color.White)
+    .backgroundColor(this.getBackgroundColor())
     .borderRadius({ topLeft: 16, topRight: 16 })
   }
   

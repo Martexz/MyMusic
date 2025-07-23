@@ -1,6 +1,7 @@
 import { Song, PlayerState } from '../models/DataModels';
 import { PlayerManager } from '../managers/PlayerManager';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 
 @CustomDialog
 export struct PlaylistDialog {
@@ -12,11 +13,15 @@ export struct PlaylistDialog {
     duration: 0,
     playMode: 0
   };
+  @State themeMode: ThemeMode = themeManager.themeMode;
   
   private playerManager: PlayerManager = PlayerManager.getInstance();
   controller: CustomDialogController;
   
   aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+    
     // 获取当前播放器状态
     this.playerState = this.playerManager.getPlayerState();
     
@@ -24,6 +29,26 @@ export struct PlaylistDialog {
     this.playerManager.addListener((state: PlayerState) => {
       this.playerState = state;
     });
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
   }
   
   build() {
@@ -33,13 +58,13 @@ export struct PlaylistDialog {
         Text('播放列表')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .fontColor(this.getTextPrimary())
         
         Blank()
         
         Text(`${this.playerState.playlist.length}首`)
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
         
         Image($r('app.media.ic_public_delete'))
           .width(20)
@@ -61,7 +86,7 @@ export struct PlaylistDialog {
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 16, bottom: 16 })
-      .backgroundColor(Color.White)
+      .backgroundColor(this.getBackgroundColor())
       
       // 播放列表
       if (this.playerState.playlist.length > 0) {
@@ -93,7 +118,7 @@ export struct PlaylistDialog {
                   Text(song.name)
                     .fontSize(16)
                     .fontColor(index === this.playerState.currentIndex ? 
-                      CommonConstants.PRIMARY_COLOR : CommonConstants.TEXT_PRIMARY)
+                      CommonConstants.PRIMARY_COLOR : this.getTextPrimary())
                     .fontWeight(index === this.playerState.currentIndex ? 
                       FontWeight.Medium : FontWeight.Normal)
                     .maxLines(1)
@@ -102,7 +127,7 @@ export struct PlaylistDialog {
                   
                   Text(song.singer?.name || '未知歌手')
                     .fontSize(14)
-                    .fontColor(CommonConstants.TEXT_SECONDARY)
+                    .fontColor(this.getTextSecondary())
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
                     .alignSelf(ItemAlign.Start)

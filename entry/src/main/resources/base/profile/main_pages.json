@@ -8,6 +8,7 @@
     "pages/MyFavoritesPage",
     "pages/MySongList",
     "pages/SettingsPage",
-    "pages/ThemeModePage"
+    "pages/ThemeModePage",
+    "pages/MoreSongsPage"
   ]
 }

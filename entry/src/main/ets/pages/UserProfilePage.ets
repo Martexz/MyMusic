@@ -5,6 +5,7 @@ import { UserManager } from '../managers/UserManager';
 import { UserService } from '../services/UserService';
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import { ImageUtil } from '../utils/ImageUtil';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import fs from '@ohos.file.fs';
@@ -27,13 +28,40 @@ struct UserProfilePage {
   @State tempUsername: string = '';
   @State tempIntroduction: string = '';
   @State tempEmail: string = '';
+  @State themeMode: ThemeMode = themeManager.themeMode;
   @State localAvatarPath: string = ''; // 本地选择的头像路径
   @State isUploadingAvatar: boolean = false; // 头像上传状态
   private userManager: UserManager = UserManager.getInstance();
   private context = getContext() as common.UIAbilityContext;
-
+  private readonly onThemeChanged = (mode: ThemeMode) => {
+    this.themeMode = mode;
+  };
   aboutToAppear() {
     this.loadUserInfo();
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.BACKGROUND_DARK
+      : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimaryColor(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.TEXT_COLOR_DARK_PRIMARY
+      : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondaryColor(): string {
+    return this.themeMode === 'dark'
+      ? CommonConstants.TEXT_COLOR_DARK_SECONDARY
+      : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
   }
 
   private loadUserInfo() {
@@ -73,7 +101,7 @@ struct UserProfilePage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(CommonConstants.BACKGROUND_COLOR)
+    .backgroundColor(this.getBackgroundColor());
   }
 
   @Builder
@@ -82,15 +110,13 @@ struct UserProfilePage {
       Image($r('app.media.ic_public_back'))
         .width(24)
         .height(24)
-        .fillColor(CommonConstants.TEXT_PRIMARY)
-        .onClick(() => {
-          router.back();
-        })
+        .fillColor(this.themeMode==='dark'?CommonConstants.BACKGROUND_LIGHT:CommonConstants.BACKGROUND_DARK)
+        .onClick(() => router.back());
 
       Text('个人主页')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
-        .fontColor(CommonConstants.TEXT_PRIMARY)
+        .fontColor(this.getTextPrimaryColor())
         .layoutWeight(1)
         .textAlign(TextAlign.Center)
 
@@ -122,7 +148,7 @@ struct UserProfilePage {
     .padding({ left: 16, right: 16 })
     .justifyContent(FlexAlign.SpaceBetween)
     .alignItems(VerticalAlign.Center)
-    .backgroundColor(Color.White)
+    .backgroundColor(this.getBackgroundColor());
   }
 
   @Builder
@@ -289,7 +315,7 @@ struct UserProfilePage {
         }, '请输入个人简介')
     }
     .width('100%')
-    .backgroundColor(Color.White)
+    .backgroundColor(this.themeMode==='dark'?"#ff353333":Color.White)
     .borderRadius(12)
     .margin({ top: 16, left: 16, right: 16 })
   }
@@ -299,8 +325,8 @@ struct UserProfilePage {
     Row() {
       Text(label)
         .fontSize(16)
-        .fontColor(CommonConstants.TEXT_PRIMARY)
-        .width(80)
+        .fontColor(this.getTextPrimaryColor())
+        .width(80);
 
       if (this.isEditing) {
         TextInput({ text: editValue, placeholder: placeholder || `请输入${label}` })
@@ -309,12 +335,13 @@ struct UserProfilePage {
           .borderRadius(0)
           .padding(0)
           .fontSize(16)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
-          .onChange(onChange)
+          .placeholderColor(this.getTextSecondaryColor())
+          .fontColor(this.getTextPrimaryColor())
+          .onChange(onChange);
       } else {
         Text(value)
           .fontSize(16)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondaryColor())
           .layoutWeight(1)
           .textAlign(TextAlign.End)
       }
@@ -347,7 +374,7 @@ struct UserProfilePage {
     }
     .width('100%')
     .height(80)
-    .backgroundColor(Color.White)
+    .backgroundColor(this.themeMode==='dark'?"#ff353333":Color.White)
     .borderRadius(12)
     .margin({ top: 16, left: 16, right: 16 })
     .justifyContent(FlexAlign.SpaceEvenly)
@@ -360,12 +387,12 @@ struct UserProfilePage {
       Text(value)
         .fontSize(20)
         .fontWeight(FontWeight.Bold)
-        .fontColor(CommonConstants.TEXT_PRIMARY)
-        .margin({ bottom: 4 })
+        .fontColor(this.getTextPrimaryColor())
+        .margin({ bottom: 4 });
 
       Text(label)
         .fontSize(14)
-        .fontColor(CommonConstants.TEXT_SECONDARY)
+        .fontColor(this.getTextSecondaryColor());
     }
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)

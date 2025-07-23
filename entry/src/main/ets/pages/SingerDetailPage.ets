@@ -4,6 +4,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { ImageUtil } from '../utils/ImageUtil';
 import { SongItem } from '../components/SongItem';
 import { PlayerManager } from '../managers/PlayerManager';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import router from '@ohos.router';
 
 @Entry
@@ -13,10 +14,14 @@ struct SingerDetailPage {
   @State songs: Song[] = [];
   @State isLoading: boolean = true;
   @State errorMessage: string = '';
+  @State themeMode: ThemeMode = themeManager.themeMode;
   
   private singerId: number = 0;
   
   aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+    
     // 获取传递的歌手ID
     const params = router.getParams() as Record<string, Object>;
     if (params && params.singerId) {
@@ -26,6 +31,26 @@ struct SingerDetailPage {
       this.errorMessage = '歌手信息不存在';
       this.isLoading = false;
     }
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
   }
   
   /**
@@ -65,7 +90,7 @@ struct SingerDetailPage {
         Text('歌手详情')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
-          .fontColor(Color.White)
+          .fontColor(this.getTextPrimary())
           .margin({ left: 16 })
         
         Blank()
@@ -237,7 +262,8 @@ struct SingerDetailPage {
                   SongItem({ 
                     song: song,
                     showIndex: true,
-                    index: index + 1
+                    index: index + 1,
+                    themeMode: this.themeMode
                   })
                     .margin({ bottom: 8 })
                 }, (song: Song) => song.id.toString())
@@ -269,7 +295,7 @@ struct SingerDetailPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#FF2D3436')
+    .backgroundColor(this.getBackgroundColor())
     .backgroundImage($r('app.media.bg4'))
     .backgroundImageSize(ImageSize.Cover)
   }

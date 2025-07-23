@@ -1,5 +1,6 @@
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { CreateSongListDto, SongList } from '../models/DataModels';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import promptAction from '@ohos.promptAction';
 import { HttpUtil } from '../utils/HttpUtil';
 import { UserManager } from '../managers/UserManager';
@@ -21,6 +22,24 @@ export struct PlaylistPage {
   @State userId: number = 0;
   @State songLists: SongList[] = [];
   @State isLoading: boolean = false;
+  @State themeMode: ThemeMode = themeManager.themeMode;
+
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
+  }
 
   refreshCreatedPlaylists() {
     const userManager = UserManager.getInstance();
@@ -50,6 +69,8 @@ export struct PlaylistPage {
 
 
   aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
     const userManager = UserManager.getInstance();
 
     // 先尝试获取当前用户（可能是null）
@@ -69,6 +90,10 @@ export struct PlaylistPage {
 
 
     userManager.addListener(listener);
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
   }
 
   private resetPageData() {
@@ -154,7 +179,7 @@ export struct PlaylistPage {
         Text('我的歌单')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .fontColor(this.getTextPrimary())
         
         Blank()
         
@@ -178,7 +203,7 @@ export struct PlaylistPage {
       }
       .width('100%')
       .padding(CommonConstants.MARGIN_MEDIUM)
-      .backgroundColor(Color.White)
+      .backgroundColor(this.getBackgroundColor())
 
       // 创建歌单弹窗
       if (this.isCreatingPlaylist) {
@@ -206,7 +231,7 @@ export struct PlaylistPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(CommonConstants.BACKGROUND_COLOR)
+    .backgroundColor(this.getBackgroundColor())
   }
 
   @Builder
@@ -215,13 +240,13 @@ export struct PlaylistPage {
       Text(title)
         .fontSize(16)
         .fontWeight(FontWeight.Bold)
-        .fontColor(CommonConstants.TEXT_PRIMARY)
+        .fontColor(this.getTextPrimary())
       
       Blank()
       
       Text('查看全部')
         .fontSize(14)
-        .fontColor(CommonConstants.TEXT_SECONDARY)
+        .fontColor(this.getTextSecondary())
         .onClick(() => {
           // 查看全部逻辑
         })
@@ -242,18 +267,18 @@ export struct PlaylistPage {
       if (this.myPlaylists.length === 0) {
         Text('暂无最近播放记录')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
           .margin(CommonConstants.MARGIN_LARGE)
       } else {
         // TODO: 实现最近播放列表
         Text('最近播放列表')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
           .margin(CommonConstants.MARGIN_LARGE)
       }
     }
     .width('100%')
-    .backgroundColor(Color.White)
+    .backgroundColor(this.getBackgroundColor())
     .borderRadius(CommonConstants.BORDER_RADIUS)
     .margin({
       left: CommonConstants.MARGIN_MEDIUM,
@@ -269,7 +294,7 @@ export struct PlaylistPage {
         Text('创建的歌单')
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .fontColor(this.getTextPrimary())
 
         Blank()
 
@@ -295,7 +320,7 @@ export struct PlaylistPage {
       if (this.createdPlaylists.length === 0) {
         Text('还没有创建歌单，快去创建一个吧！')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
           .margin(CommonConstants.MARGIN_LARGE)
       } else {
         ForEach(this.createdPlaylists, (playlist: SongList) => {
@@ -303,13 +328,13 @@ export struct PlaylistPage {
             Column() {
               Text(playlist.title)
                 .fontSize(16)
-                .fontColor(CommonConstants.TEXT_PRIMARY)
+                .fontColor(this.getTextPrimary())
                 .margin({ bottom: 4 })
 
               if (playlist.introduction && playlist.introduction.length > 0) {
                 Text(playlist.introduction)
                   .fontSize(14)
-                  .fontColor(CommonConstants.TEXT_SECONDARY)
+                  .fontColor(this.getTextSecondary())
               }
             }
             .layoutWeight(1)
@@ -331,7 +356,7 @@ export struct PlaylistPage {
       }
     }
     .width('100%')
-    .backgroundColor(Color.White)
+    .backgroundColor(this.getBackgroundColor())
     .borderRadius(CommonConstants.BORDER_RADIUS)
     .margin({
       left: CommonConstants.MARGIN_MEDIUM,
@@ -347,18 +372,18 @@ export struct PlaylistPage {
       if (this.collectedPlaylists.length === 0) {
         Text('还没有收藏歌单')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
           .margin(CommonConstants.MARGIN_LARGE)
       } else {
         // TODO: 实现收藏的歌单列表
         Text('收藏的歌单列表')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
           .margin(CommonConstants.MARGIN_LARGE)
       }
     }
     .width('100%')
-    .backgroundColor(Color.White)
+    .backgroundColor(this.getBackgroundColor())
     .borderRadius(CommonConstants.BORDER_RADIUS)
     .margin({
       left: CommonConstants.MARGIN_MEDIUM,
@@ -378,7 +403,7 @@ export struct PlaylistPage {
             Text('新建歌单')
               .fontSize(18)
               .fontWeight(FontWeight.Bold)
-              .fontColor(CommonConstants.TEXT_PRIMARY)
+              .fontColor(this.getTextPrimary())
               .margin({ bottom: CommonConstants.MARGIN_LARGE })
 
             TextInput({ placeholder: '输入歌单名称', text: this.newPlaylistName })
@@ -434,7 +459,7 @@ export struct PlaylistPage {
           }
           .width('80%')
           .padding(CommonConstants.MARGIN_LARGE)
-          .backgroundColor(Color.White)
+          .backgroundColor(this.getBackgroundColor())
           .borderRadius(CommonConstants.BORDER_RADIUS)
         }
         .width('100%')

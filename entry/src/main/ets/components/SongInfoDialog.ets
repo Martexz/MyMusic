@@ -1,9 +1,36 @@
 import { Song } from '../models/DataModels';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 
 @Component
 export struct SongInfoDialog {
   @Prop song?: Song;
+  @State themeMode: ThemeMode = themeManager.themeMode;
+
+  aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
+  }
   
   build() {
     Column() {
@@ -11,7 +38,7 @@ export struct SongInfoDialog {
       Text('歌曲信息')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
-        .fontColor(CommonConstants.TEXT_PRIMARY)
+        .fontColor(this.getTextPrimary())
         .margin({ bottom: 20 })
       
       // 歌曲信息

@@ -2,6 +2,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { Song } from '../models/DataModels';
 import { UserManager } from '../managers/UserManager';
 import { MusicService } from '../services/MusicService';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 import { ImageUtil } from '../utils/ImageUtil';
@@ -13,11 +14,34 @@ struct MyFavoritesPage {
   @State isLoading: boolean = true;
   @State isEmpty: boolean = false;
   @State isLogin: boolean = false;
+  @State themeMode: ThemeMode = themeManager.themeMode;
   
   private userManager: UserManager = UserManager.getInstance();
 
   aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
     this.checkLoginAndLoadFavorites();
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
   }
 
   private checkLoginAndLoadFavorites() {
@@ -72,7 +96,7 @@ struct MyFavoritesPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(CommonConstants.BACKGROUND_COLOR)
+    .backgroundColor(this.getBackgroundColor())
   }
 
   @Builder
@@ -89,7 +113,7 @@ struct MyFavoritesPage {
       Text('我的收藏')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
-        .fontColor(CommonConstants.TEXT_PRIMARY)
+        .fontColor(this.getTextPrimary())
         .layoutWeight(1)
         .textAlign(TextAlign.Center)
 
@@ -265,7 +289,7 @@ struct MyFavoritesPage {
       // 序号
       Text((index + 1).toString())
         .fontSize(14)
-        .fontColor(CommonConstants.TEXT_SECONDARY)
+        .fontColor(this.getTextSecondary())
         .width(30)
         .textAlign(TextAlign.Center)
 
@@ -284,14 +308,14 @@ struct MyFavoritesPage {
       Column() {
         Text(song.name)
           .fontSize(16)
-          .fontColor(CommonConstants.TEXT_PRIMARY)
+          .fontColor(this.getTextPrimary())
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .alignSelf(ItemAlign.Start)
 
         Text(song.singer?.name || '未知歌手')
           .fontSize(14)
-          .fontColor(CommonConstants.TEXT_SECONDARY)
+          .fontColor(this.getTextSecondary())
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .alignSelf(ItemAlign.Start)

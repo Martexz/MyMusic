@@ -2,6 +2,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { SongList } from '../models/DataModels';
 import { MusicService } from '../services/MusicService';
 import { UserManager } from '../managers/UserManager';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import promptAction from '@ohos.promptAction';
 import { ImageUtil } from '../utils/ImageUtil';
 
@@ -10,6 +11,7 @@ export struct AddToPlaylistDialog {
   @State playlists: SongList[] = [];
   @State isLoading: boolean = true;
   @State selectedPlaylistId: number = -1;
+  @State themeMode: ThemeMode = themeManager.themeMode;
   
   songId: number = 0;
   songName: string = '';
@@ -17,7 +19,29 @@ export struct AddToPlaylistDialog {
   private userManager: UserManager = UserManager.getInstance();
 
   aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
     this.loadUserPlaylists();
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
   }
 
   private async loadUserPlaylists() {

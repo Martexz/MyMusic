@@ -2,6 +2,7 @@ import { router } from '@kit.ArkUI';
 import { SongListParams, Song } from '../models/DataModels';
 import { MusicService } from '../services/MusicService';
 import { SongItem } from '../components/SongItem';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import promptAction from '@ohos.promptAction';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { UserManager } from '../managers/UserManager';
@@ -23,8 +24,12 @@ export struct MySongList {
   @State creatorName: string = '';
   @State songs: Song[] = [];
   @State isLoading: boolean = true;
+  @State themeMode: ThemeMode = themeManager.themeMode;
 
   aboutToAppear() {
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+    
     const params = router.getParams() as SongListParams;
     if (params) {
       this.songListId = params.id ?? -1;
@@ -35,6 +40,26 @@ export struct MySongList {
         this.loadSongListSongs();
       }
     }
+  }
+
+  aboutToDisappear() {
+    themeManager.off(this.onThemeChanged);
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
   }
 
   private async loadSongListSongs() {
@@ -249,7 +274,8 @@ export struct MySongList {
                   SongItem({ 
                     song: song,
                     showIndex: true,
-                    index: index + 1
+                    index: index + 1,
+                    themeMode: this.themeMode
                   })
                 }
                 .onClick(() => {
@@ -270,6 +296,6 @@ export struct MySongList {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#eeeeee')
+    .backgroundColor(this.getBackgroundColor())
   }
 }

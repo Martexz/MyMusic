@@ -178,7 +178,7 @@ export struct DiscoverPage {
         List() {
           ForEach(this.searchResults.songs, (song: Song) => {
             ListItem() {
-              SongItem({ song: song })
+              SongItem({ song: song, themeMode: this.themeMode })
             }
           }, (song: Song) => song.id.toString())
         }
@@ -211,7 +211,7 @@ export struct DiscoverPage {
         List() {
           ForEach(this.searchResults.singers, (singer: Singer) => {
             ListItem() {
-              SingerItem({ singer: singer })
+              SingerItem({ singer: singer, themeMode: this.themeMode  })
             }
           }, (singer: Singer) => singer.id.toString())
         }
@@ -244,7 +244,7 @@ export struct DiscoverPage {
         List() {
           ForEach(this.searchResults.songLists, (songList: SongList) => {
             ListItem() {
-              SongListItem({ songList: songList })
+              SongListItem({ songList: songList , themeMode: this.themeMode })
             }
           }, (songList: SongList) => songList.id.toString())
         }
@@ -270,6 +270,7 @@ export struct DiscoverPage {
     Column() {
       Text('音乐排行榜')
         .fontSize(16)
+        .fontColor(this.getTextPrimary())
       Text('暂无排行榜数据')
         .fontSize(14)
         .fontColor(this.getTextSecondary())

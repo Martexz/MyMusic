@@ -4,6 +4,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { ImageUtil } from '../utils/ImageUtil';
 import { PlaylistDialog } from '../components/PlaylistDialog';
 import { PlayerOptionsMenu } from '../components/PlayerOptionsMenu';
+import themeManager, { ThemeMode } from '../common/ThemeManager';
 import router from '@ohos.router';
 
 @Entry
@@ -18,6 +19,7 @@ struct PlayerPage {
     playMode: 0
   };
   @State private showOptions: boolean = false;
+  @State themeMode: ThemeMode = themeManager.themeMode;
   
   private playerManager: PlayerManager = PlayerManager.getInstance();
   private playlistDialogController: CustomDialogController = new CustomDialogController({
@@ -27,6 +29,10 @@ struct PlayerPage {
   });
   
   aboutToAppear() {
+    // 监听主题变化
+    themeManager.on(this.onThemeChanged);
+    this.themeMode = themeManager.themeMode;
+    
     // 监听播放器状态变化
     this.playerManager.addListener((state: PlayerState) => {
       this.playerState = state;
@@ -37,10 +43,29 @@ struct PlayerPage {
   }
   
   aboutToDisappear() {
+    // 移除主题监听器
+    themeManager.off(this.onThemeChanged);
+    
     // 移除监听器
     this.playerManager.removeListener((state: PlayerState) => {
       this.playerState = state;
     });
+  }
+
+  private onThemeChanged = (mode: ThemeMode): void => {
+    this.themeMode = mode;
+  };
+
+  private getBackgroundColor(): string {
+    return this.themeMode === 'dark' ? CommonConstants.BACKGROUND_DARK : CommonConstants.BACKGROUND_LIGHT;
+  }
+
+  private getTextPrimary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_PRIMARY : CommonConstants.TEXT_COLOR_LIGHT_PRIMARY;
+  }
+
+  private getTextSecondary(): string {
+    return this.themeMode === 'dark' ? CommonConstants.TEXT_COLOR_DARK_SECONDARY : CommonConstants.TEXT_COLOR_LIGHT_SECONDARY;
   }
   
   /**
@@ -87,7 +112,7 @@ struct PlayerPage {
         Text('正在播放')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
-          .fontColor(Color.White)
+          .fontColor(this.getTextPrimary())
         
         Blank()
         
@@ -134,14 +159,14 @@ struct PlayerPage {
             Text(this.getCurrentSong()?.name || '未知歌曲')
               .fontSize(24)
               .fontWeight(FontWeight.Bold)
-              .fontColor(Color.White)
+              .fontColor(this.getTextPrimary())
               .textAlign(TextAlign.Center)
               .maxLines(2)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
             
             Text(this.getCurrentSong()?.singer?.name || '未知歌手')
               .fontSize(16)
-              .fontColor('#CCFFFFFF')
+              .fontColor(this.getTextSecondary())
               .textAlign(TextAlign.Center)
               .margin({ top: 8 })
               .onClick(() => {
@@ -171,13 +196,13 @@ struct PlayerPage {
             Row() {
               Text(this.formatTime(this.playerState.currentTime))
                 .fontSize(12)
-                .fontColor('#CCFFFFFF')
+                .fontColor(this.getTextSecondary())
               
               Blank()
               
               Text(this.formatTime(this.playerState.duration))
                 .fontSize(12)
-                .fontColor('#CCFFFFFF')
+                .fontColor(this.getTextSecondary())
             }
             .width('100%')
             .margin({ top: 8 })
@@ -249,7 +274,7 @@ struct PlayerPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#FF2D3436')
+    .backgroundColor(this.getBackgroundColor())
     .backgroundImage($r('app.media.bg4'))
     .backgroundImageSize(ImageSize.Cover)
     .bindSheet(this.showOptions, this.OptionsMenuBuilder(), {
